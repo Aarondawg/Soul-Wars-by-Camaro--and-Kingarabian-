@@ -1,0 +1,15 @@
+First thing is first...
+
+I made the mainloop so that it theoretically it should work on most spots on the island. So using standard functions without the main loop
+I cant guarentee they will work. Also if I ever say 'using the mainloop', all i mean is to let the mainloop figure out that its time to walk to the waiting room, or if its time to enter.
+The funciton that you said only works if you are near the barrier, works everywhere where its visible on the minimap for me(using the mainloop).
+
+The way the entering waiting rooms works, is if the mainloop ever detects that its near the bank, it will walk into the middle of the two rooms
+It will now walk to the red door correlating to the correct room (by making sure that the red door point its walking to is relatively close to the one that GetRedWaitRoom returns (same for blue))
+if the the door is not visibile cause of someone covering it, it will just walk to the point that getRedWaitRoom returns.
+
+Then is tries to enter the door ( makes angle low, camera angle west/east).. It clicks join, and if you have a waiting period it will now recogonize that and wait a minute, and try to get into the 
+waiting room again (After the minutes passed) it will keep doing that until its in the game. Now the main loop ( getLoc ) will then use a simple function to detect if ur in the waiting room. It will wait
+until you are out of the waiting room. Once in game I made a function that finds the graveyard door point. I dont actually use this yet, nor have I tested it, maybe you could inccorperate something to make
+it leave the graveyard.
+
