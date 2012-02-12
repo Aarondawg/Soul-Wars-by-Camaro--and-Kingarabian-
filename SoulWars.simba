@@ -1,6 +1,12 @@
 program SW;
-{$DEFINE SMART}
 {$I SRL/SRL.simba}
+{$I SRL/SRL/misc/debug.simba}
+
+const
+  DebugScript = True;
+
+var
+  InWaitingRoom : Boolean;
 
 procedure DeclarePlayers;
 begin
@@ -13,6 +19,311 @@ begin
   Players[0].Pin := ''; // Bank Pin. Leave it if you don't have one.
 end;
 
+procedure Debug(S: String);
+begin
+  if (DebugScript) then
+    Writeln(s);
+end;
+
+function InGame: Boolean;
+begin
+  Result := False;//For now
+end;
+
+function CompassNorth : Boolean;//gets the compass and checks if ur facing north
+var
+  C : Integer;
+begin
+  C := Round(RS_GetCompassAngleDegrees);
+  if ((InRange(c, 340, 360)) or (InRange(c, 0, 20)))then
+    Result := True;
+end;
+
+
+function NearBank : Boolean;
+var
+  A, X, Y, C : Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+  TP : Tpoint;
+begin
+  if not LoggedIn then Exit;
+
+  if (not(CompassNorth)) then
+    Exit;
+  if (InWaitingRoom) then Exit;
+  FindColorsTolerance(TPA, 1136677, 605, 12, 664, 39, 10);//Box on northern part of MM(alot of trees)
+  Debug('Length of MM Trees TPA: '+ToStr(Length(TPA))+'');
+  if (Length(TPA) > 680) then
+  begin
+    Result := True;
+    Debug('Player: Near Bank'); //looks for the trees (if u stand by bank u see them north of u) looks for those
+  end;
+end;
+
+function RotatePointEx(p, o:tPoint; d:Extended):TPoint ;
+begin
+  p.x := p.x + (0 - o.x);
+  p.y := p.y + (0 - o.y);
+
+  Result.x := (round(p.x * cos(d * (PI / 180)) -  (p.y * sin(d * (PI / 180))))) - o.x * -1;
+  Result.y := (round(sin(d * (PI / 180)) * p.x + cos(d * 1 * (PI / 180)) * p.y)) - o.y * -1;
+end;
+
+function Walking(Color, Tolerance: Integer; SortFrom: TPoint; RX, RY: Integer): Boolean;
+var
+  i, x, y, a : Integer;
+  TPA: TPointArray;
+  xT : TPoint;
+begin
+  if not LoggedIn then Exit;
+  FindNormalRandoms;
+  a := round(RS_GetCompassAngleDegrees);
+  a := (360 - a);
+  xT := RotatePointEx(SortFrom, Point(MMCX,MMCY), a);
+  FindColorsSpiralTolerance(MMCX, MMCY, TPA, Color, MMX1, MMY1, MMX2, MMY2, Tolerance);
+  if (Length(TPA) < 10) then Exit;
+
+  SortTPAFrom(TPA, XT);
+
+  for i := 0 to High(TPA) do
+  begin
+    x := TPA[i].x;
+    y := TPA[i].y;
+
+    rx := RandomRange(-rx, rx);
+    ry := RandomRange(-ry, ry);
+    if (not rs_OnMinimap(x + rx, y + ry)) then
+      Continue;
+
+    Mouse(x + rx, y + ry, 0, 0, true);
+    FFlag(0);
+    Wait(700 + Random(500));
+    Result := True;
+    Break;
+  end;
+end;
+
+function GetRedWaitingRoom: TPoint;
+var
+  A, X, Y: Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+begin
+  if not LoggedIn then Exit;
+  FindColorsTolerance(TPA, 2273738, MMX1, MMY1, MMX2, MMY2, 11);
+  atpa := SplitTPAEx(TPA, 25, 25);
+  SortATPASize(ATPA, True);
+
+  for A := 0 to High(ATPA) do
+  begin
+    bBox := GetTPABounds(ATPA[A]);
+    Debug('Lava width: '+ToStr(bBox.X2 - bBox.X1)+'');
+    Debug('Lava height:'+ToStr(bBox.y2 - bBox.y1)+'');
+    if (bBox.X2 - bBox.X1 >= 8) and (bBox.Y2 - bBox.Y1 >= 50) then
+    begin
+      MiddleTPAEx(ATPA[A], X, Y);
+      if (X < 1) or (Y < 1) then
+        Continue;
+      Result := Point(X, Y);
+      Debug('Lava TPoint: '+ToStr(X)+', '+ToStr(Y)+'');
+      Exit;
+    end;
+    wait(5);
+  end;
+end;
+
+function NearRedLava: Boolean;
+var
+  A, X, Y: Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+begin
+  if not LoggedIn then Exit;
+  FindColorsTolerance(TPA, 2415357 , MSX1, MSY1, MSX2, MSY2, 15); //checks ms for alot of lava (doesnt move mouse) not used if i remember correctly
+  Debug('Lava Length: '+ToStr(Length(TPA))+'');
+  if (Length(TPA) > 38000) then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+end;
+
+function GetRedWaitingDoor: TPoint;
+
+var
+  A, X, Y : Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+  TP : Tpoint;
+begin
+  if not LoggedIn then Exit;
+  FindColorsTolerance(TPA, 132331, MMX1, MMY1, MMX2, MMY2, 15);
+  ATPA := TPAToATPAEx(TPA, 1, 3);
+  SortATPASize(ATPA, False);
+  TP := GetRedWaitingRoom;
+  SortATPAFrom(ATPA, TP);
+  DebugATPA(ATPA, '');
+  for A := High(ATPA) downto 0 do
+  begin
+    MiddleTPAEx(ATPA[A], X, Y);
+    Debug('Distance from lava TPoint: '+ToStr(Distance(x, y, TP.X, TP.Y)));
+    if (Distance(x, y, TP.X, TP.Y) < 40) then
+    begin
+      bBox := GetTPABounds(ATPA[A]);
+      Debug('Door width: '+ToStr(bBox.X2 - bBox.X1)+'');
+      Debug('Door height: '+ToStr(bBox.y2 - bBox.y1)+'');
+      if (bBox.X2 - bBox.X1 >= 0) and (bBox.Y2 - bBox.Y1 >= 3) then
+      begin
+        if (X < 1) or (Y < 1) then
+          Continue;
+        Result := Point(X, Y);
+        Debug('Door TPoint: '+ToStr(X)+', '+ToStr(Y)+'');
+        Exit;
+      end;
+    end;
+    wait(10);
+  end;
+end;
+
+function WalkToRedWaitingEntrance: Boolean;
+var
+  TP: TPoint;
+begin
+  if not LoggedIn then Exit;
+  TP := GetRedWaitingDoor;
+  if (TP.X > 0) and (TP.Y > 0) then
+  begin
+    Mouse(TP.X, TP.Y, 6, 6, True);
+    Wait(RandomRange(750, 2500));
+    FFlag(0);
+    Result := True;
+    Exit;
+  end;
+  Debug('Failed walking to red entrance');
+  TP := GetRedWaitingRoom;                   //IF RED DOOR IS COVER ...
+  if (TP.X > 0) and (TP.Y > 0) then
+  begin
+    Mouse(TP.X, TP.Y, 6, 6, True);
+    Wait(RandomRange(750, 2500));
+    FFlag(0);
+    Result := True;
+    Exit;
+  end;
+  Debug('Failed walking to red entrance : 2');
+end;
+
+function EnterRedWaitingRoom: Boolean;
+
+var
+  A, X, Y : Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+  TP : Tpoint;
+begin
+  if not LoggedIn then Exit;
+  SetAngle(1);
+  MakeCompass('E');
+  FindColorsTolerance(TPA, 5988801, 162, 68, 363, 218, 30); //Small box around area of portal
+  ATPA := TPAToATPAEx(TPA, 2,3);//split the big tpa into small boxs
+  SortATPASize(ATPA, True); //sort by the bigger boxes first
+  SortATPAFrom(ATPA, Point(MSCX, MSCY)); //and the ones closest to us
+  DebugATPA(ATPA, '');     //..
+  for A := High(ATPA) downto 0 do //its late, idont remember why im going down from the top
+  begin
+    MiddleTPAEx(ATPA[A], X, Y);
+    Debug('Distance from lava door: '+ToStr(Distance(x, y, MSCX, MSCY)));
+    if ((Distance(x, y, MSCX, MSCY)) < 40) then  //if we are close to barrier
+    begin
+      bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
+      Debug('Door MS width: '+ToStr(bBox.X2 - bBox.X1)+'');
+      Debug('Door MS height: '+ToStr(bBox.y2 - bBox.y1)+'');
+      if (bBox.X2 - bBox.X1 >= 2) and (bBox.Y2 - bBox.Y1 >= 2) then  //if its this big
+      begin
+        if (X < 1) or (Y < 1) then
+          Continue;
+        Mouse(X, Y, 6, 6, False);   //goo!!!!!!
+        if (WaitOption('arrier', 1500)) then
+        begin
+          Result := True;
+          InWaitingRoom := True;
+          FFlag(0);
+
+          MakeCompass('N');
+          SetAngle(0);
+          Wait(1500 + Random(1500));
+          Exit;
+        end;
+      end;
+    end;
+    wait(10);
+  end;
+end;
+
+function GameLoop: Boolean; //Gets repeated as long as we are in the game
+begin
+  InWaitingRoom := False;// Call this everytime so there is no confusing
+end;
+
+
+function GetLoc: String;
+begin
+  if (not(InGame)) then //If not in the game
+  begin
+    if (NearBank) then // If we are near the bank
+    begin
+      Result := 'LeaveBank';//Tell main loop to walk toward the middle of the two islands
+      Exit;
+    end else   // if we are not in game and not by bank
+    begin
+      if (InWaitingRoom) then // check if were in waiting room (Simple boolean)
+      begin
+        Result := 'Waiting Room';
+        Exit;
+      end;                  //if not, lets GOOO!
+      Result := 'EnterWaitingRoom';
+    end;
+  end else
+  begin
+    Result := 'InGame';  //in game time
+  end;
+
+end;
+
 begin
   SetupSRL;
+  DeclarePlayers;
+  repeat
+    if (Random(2) = 1) then Debug(GetLoc);    //So the debug box doesnt get spammed
+    case GetLoc of
+      'LeaveBank':
+      begin
+        Walking(6713205, 15, Point(631, 146), 5, 5); // if Near the bank walk south to the middle of both boxes
+      end;
+      'EnterWaitingRoom':
+      begin
+        if (not(CompassNorth)) then // If your compass is east/west already from a previous attempt, then just try again
+        begin
+          if (EnterRedWaitingRoom) then
+            Break;
+        end else
+        begin
+          if (WalkToRedWaitingEntrance) then  //Walks to the red
+          begin
+            EnterRedWaitingRoom;
+          end;
+        end;
+      end;
+      'WaitingRoom':
+      begin
+        Wait(1250 + Random(1250));
+      end;
+    end;
+  until False
 end.

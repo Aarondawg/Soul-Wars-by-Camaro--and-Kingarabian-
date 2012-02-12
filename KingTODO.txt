@@ -1,0 +1,17 @@
+In order
+-Clean up my code.
+-Review it, understand, ask(Write down questions)
+-Check for any possible mishaps where a failsafe could be due (id think there should be some spots maybe)
+-Start working on adding user preferences (what team you want to be(always red, always blue, last won, random) and decide a good way to handle how its done in our script)
+-Go into a game and make a function that determines if you are in game (Very simple)
+
+funciton ingame: boolean;
+begin
+  result := getcolor(A Certain X, Certain y ) = 555; just check for a color that dont chnage
+
+-Whatever YOU want now :) now that my list is done for now, u have time for fun and make stufffzz
+
+
+Side not
+
+It should be able to work from the bank, the middle of both boxes, and when ur next to the red gate ( havent testeed else where, u should)
