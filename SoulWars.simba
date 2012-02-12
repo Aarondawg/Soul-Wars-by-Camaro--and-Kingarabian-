@@ -2,6 +2,17 @@ program SW;
 {$DEFINE SMART}
 {$I SRL/SRL.simba}
 
+procedure DeclarePlayers;
+begin
+  HowManyPlayers := 1; // Number of Players to use
+  NumberOfPlayers(HowManyPlayers);
+  CurrentPlayer := 0; // Player to start with, first one is 0
+  Players[0].Name := ''; // Username
+  Players[0].Pass := ''; // Password
+  Players[0].Active := True; // True if you are using this player
+  Players[0].Pin := ''; // Bank Pin. Leave it if you don't have one.
+end;
+
 begin
   SetupSRL;
 end.
