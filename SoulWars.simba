@@ -4,7 +4,8 @@ program SW;
 
 const
   DebugScript = True;
-
+  Team = 'red'; //Choose red or blue team.
+  JoinType = 'last won'; // Last Won, Last Lost , Always Red, Always Blue,
 var
   InWaitingRoom : Boolean;
 
@@ -25,10 +26,44 @@ begin
     Writeln(s);
 end;
 
-function InGame: Boolean;
+Function CheckGameInSession: Boolean; //Text in  box telling you that a game is in session and if you want to continue regardless.
+  begin
+   {If FindText() then
+   ChooseOption;}
+  end;
+
+Function CheckIsKicked: Boolean;  //To-be continued   Basically a chat box will appear telling you that you are banned from the game. Indicates time remaining.
 begin
-  Result := False;//For now
+ {if FindText()}
 end;
+function InGame: Boolean;  //To-be heavily optimized. I know, I know it looks really ugly. Sorry bare with me. However the colors should work. Tested througly.
+  var
+  x,y,CTS: Integer;
+begin
+  CTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+    If  (Lowercase(Team) = 'red') then
+    begin
+      SetColorSpeed2Modifiers(0.73, 1.56);
+    if  FindColorSpiralTolerance(x, y, 1118245, MSX1, MSY1, MSX2, MSY2, 1) then
+    begin
+      writeln('Found Red team');
+        ColorToleranceSpeed(CTS);
+          SetColorSpeed2Modifiers(0.2, 0.2);
+            Result:= True;
+            end;
+end else
+    if (Lowercase(Team) = 'blue') then
+     CTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(0.43, 7.28);
+    if FindColorSpiralTolerance(X, Y, 2562576, MSX1, MSY1, MSX2, MSY2, 1) then
+     writeln('Found Blue Team');
+        ColorToleranceSpeed(CTS);
+          SetColorSpeed2Modifiers(0.2, 0.2);
+            Result:= True;
+     end;
+
 
 function CompassNorth : Boolean;//gets the compass and checks if ur facing north
 var
@@ -266,6 +301,8 @@ begin
   end;
 end;
 
+
+
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 begin
   InWaitingRoom := False;// Call this everytime so there is no confusing
@@ -299,7 +336,10 @@ end;
 begin
   SetupSRL;
   DeclarePlayers;
-  repeat
+  ActivateClient;
+  NearRedLava;
+  EnterRedWaitingRoom;
+    {repeat
     if (Random(2) = 1) then Debug(GetLoc);    //So the debug box doesnt get spammed
     case GetLoc of
       'LeaveBank':
@@ -325,5 +365,5 @@ begin
         Wait(1250 + Random(1250));
       end;
     end;
-  until False
+  until False}
 end.

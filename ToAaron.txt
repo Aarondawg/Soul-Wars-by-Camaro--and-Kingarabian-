@@ -1,0 +1,17 @@
+Sorry I got home late. 
+
+Anyway InGame should work for both teams. I know it has a lot of extra code and it will be optimized.
+Took me forever to get colors because if you leave a game you cant rejoin for < 20 mins.
+Uses the cape colors on the main screen for both teams to differentiate the red and blue teams.
+
+Im going to work on the Functions, CheckGameInSession and CheckIsKicked tomorrow. Should be easy.
+
+As for your function GetRedWaitingRoom it works fine but it only works if the player is right next to the barrier. Maybe edit it to work so whenever the red barrier is viewable to click?
+
+But yeah its really fun scripting again. I cant do all that advanced sexy stuff you can do, tho not yet. I wish I can. Tomorrow Ill assit in detecting the blue room as well.
+
+Im going to go study for my exam thats on monday and I'll be on a bit later tomorrow, but dont feel discouraged. Ill put all my effort into this.
+
+Also tell me how to improve my code.
+
+2:30 am Here. Ima go study then sleep ttyl.
