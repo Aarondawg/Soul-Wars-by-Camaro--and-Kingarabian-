@@ -1,0 +1,7 @@
+program SW;
+{$DEFINE SMART}
+{$I SRL/SRL.simba}
+
+begin
+  SetupSRL;
+end.
