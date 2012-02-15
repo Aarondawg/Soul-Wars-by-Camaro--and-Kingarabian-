@@ -1,7 +1,10 @@
 program SW;
 {$I SRL/SRL.simba}
 {$I SRL/SRL/misc/debug.simba}
-
+{Read: Debugging 9/10 time causes Simba to lose focus of Runescape. Right now a lot of the previous functions are acting up.
+Colors need to be updated? To tired right now lol will continue working tomorrow.
+Also if a player is covering the barrier in the graveyard our function screws up.
+Some work to do but will figure it out. I'll continue learning and will reach our potential. }
 const
   DebugScript = True;
   //Removed ur other const, cause its the same thing as this one
@@ -534,6 +537,110 @@ begin
       end;
     end;
     wait(10);
+  end;
+end;
+
+function FindRedBarrier: Boolean; //continues to work all right
+var
+  X, Y, I, A, Height, Width: Integer;//I dont know why i added'a' yet
+  TPA : array of TPoint; //Same thing
+  ATPA : T2DPointArray;
+  bBox : TBox;
+
+begin
+  if not LoggedIn then Exit;
+  //SetAngle(false);
+  MakeCompass('W');
+  FindColorsTolerance(TPA,4738191, MSX1, MSY1, MSX2, MSY2, 15);
+  ATPA := TPAToATPAEx(TPA, 30, 50); //TPAtoATPAEx!
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));//Sorting thru the ATPA
+  DebugATPA(ATPA, '');
+  for I := 0 to High(ATPA) do   //looping...
+  begin
+    MiddleTPAEx(ATPA[I], X, Y);
+    If (X < 1) or (Y < 1) then // if our coords are greater than 1 means... idk
+    begin
+      Writeln('0');
+      Continue;
+    end;
+    if (Y > MSCY) then
+    begin
+      Writeln('1');
+      BBox :=  GetTPABounds(ATPA[I]);
+      Width := (BBox.X2-BBox.X1);
+      Height := (BBox.Y2-BBox.Y1);
+      WriteLn('Width:'+ToStr(Width));
+      WriteLn('Height:'+ToStr(Height));
+      If (Width >= 22) and (Height >= 10) then
+      begin
+        Writeln('2');
+        MMouse(X, Y, 6, 3);
+        Wait(100+Random(50));  //always add a wait to wait for uptext
+        if IsUpText('arrie') then
+        begin
+        GetMousePos(X, Y);
+        Mouse(X, Y, 0, 0, True);
+        FFlag(0);  //add fflag.
+        Wait(400+Random(125));
+        Result:=True;
+        Makecompass('n');
+        Exit;
+        //ahhhh??
+        end;
+      end;
+   end;
+  end;
+end;
+
+function FindBlueBarrier: Boolean;//Needs some work. Sometimes finds the barrier sometimes doesnt. Gotta update some input.
+var
+  X, Y, I, A, Height, Width: Integer;//I dont know why i added'a' yet
+  TPA : array of TPoint; //Same thing
+  ATPA : T2DPointArray;
+  bBox : TBox;
+
+begin
+  if not LoggedIn then Exit;
+  //SetAngle(false);
+  MakeCompass('e');
+  FindColorsTolerance(TPA,13203298, MSX1, MSY1, MSX2, MSY2, 15);
+  ATPA := TPAToATPAEx(TPA, 30, 50); //TPAtoATPAEx!
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));//Sorting thru the ATPA
+  DebugATPA(ATPA, '');
+  for I := 0 to High(ATPA) do   //looping...
+  begin
+    MiddleTPAEx(ATPA[I], X, Y);
+    If (X < 1) or (Y < 1) then // if our coords are greater than 1 means... idk
+    begin
+      Writeln('0');
+      Continue;
+    end;
+    if (Y < MSCY) then
+    begin
+      Writeln('1');
+      BBox :=  GetTPABounds(ATPA[I]);
+      Width := (BBox.X2-BBox.X1);
+      Height := (BBox.Y2-BBox.Y1);
+      WriteLn('Width:'+ToStr(Width));
+      WriteLn('Height:'+ToStr(Height));
+      If (Width >= 22) and (Height >= 10) then
+      begin
+        Writeln('2');
+        MMouse(X, Y, 6, 3);
+        Wait(100+Random(50));  //always add a wait to wait for uptext
+        if IsUpText('arrie') then
+        begin
+        GetMousePos(X, Y);
+        Mouse(X, Y, 0, 0, True);
+        FFlag(0);  //add fflag.
+        Wait(400+Random(125));
+        Result:=True;
+        Makecompass('n');
+        Exit;
+        //ahhhh??
+        end;
+      end;
+   end;
   end;
 end;
 
