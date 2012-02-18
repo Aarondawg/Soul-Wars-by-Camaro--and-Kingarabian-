@@ -225,25 +225,36 @@ end;
 function FindWhiteArrowMM: Boolean; //
 
 var
-  A, X, Y : Integer;
+  A, X, Y, Width, Height : Integer;
   TPA : TPointArray;
   ATPA : T2DPointArray;
   bBox : TBox;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 15790834 , MMX1, MMY1, MMX2, MMY2, 25); //Small box around area of arrow
+  MakeCompass('N');      //Has to be N or else you get some weird results at times.
+  FindColorsTolerance(TPA, 13816788 , MMX1, MMY1, MMX2, MMY2, 20); //Small box around area of arrow
   ATPA := TPAToATPAEx(TPA, 3,3);//split the big tpa into small boxs
   SortATPAFrom(ATPA, Point(MMCX, MMCY)); //
   for A := High(ATPA) downto 0 do //Sort from FARTHEST away ;)
   begin
     MiddleTPAEx(ATPA[A], X, Y);
-    Debug('Distance from arrow MM: '+ToStr(Distance(x, y, MMCX, MMCy)));
+    //Debug('Distance from arrow MM: '+ToStr(Distance(x, y, MMCX, MMCy)));
     bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
-    Debug('ARROW Mm width: '+ToStr(bBox.X2 - bBox.X1)+'');
-    Debug('ARROW Mm height: '+ToStr(bBox.y2 - bBox.y1)+'');
+    //Debug('ARROW Mm width: '+ToStr(bBox.X2 - bBox.X1)+'');
+    //Debug('ARROW Mm height: '+ToStr(bBox.y2 - bBox.y1)+'');
+    Width := (BBox.X2-BBox.X1);
+    Height := (BBox.Y2-BBox.Y1);
     //HINT: for starting purposes, make sure the arrow is atleast 60 pixels away from MMCX , MMCY
     //then check width/height
-
+    If (Distance(X, Y, MMCX, MMCY) >= 60) then //atleast 60 Pixels away...
+    begin
+      Writeln('Arrow is 60 pixels away');
+      If (Width <= 4) and (Height <= 3) then //Checks to see if TPA matches the info we got from the debug.
+      begin
+        WriteLn('Found White Arrow');
+        MoveMouse(X, Y);      //Just to see if it works. It works, but if Red Arrow is covering, the TPA is still found,
+      end;                   //But the color is lost.
+    end;
   end;
 end;
 
@@ -808,6 +819,8 @@ begin
   SetupSRL;
   DeclarePlayers;
   ActivateClient;
+  FindWhiteArrowMM;
+  TerminateScript;
   TeamOn := 'Blue'; //for now just set this...
   repeat
     if (InGame) then
