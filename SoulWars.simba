@@ -117,7 +117,7 @@ begin
   end;
 end;
 
-function CountWallPixels : Integer;
+function InGraveYard : Boolean;
 var
   I, X, Y : Integer;
   TPA : TPointArray;
@@ -126,31 +126,29 @@ var
 begin
   if not LoggedIn then Exit;
 
-  //if (InWaitingRoom) then Exit;
-  FindColorsTolerance(TPA, 15528438, MMCX - 55, MMCY - 55, MMCX + 55, MMCY + 55, 10);//Box for walls    //MMx1, MMy1, MMx2, mmy2
+  if (InWaitingRoom) then Exit;
+  if (not(InGame)) then Exit;
+  //FindColorsTolerance(TPA, 15528438, MMCX - 55, MMCY - 55, MMCX + 55, MMCY + 55, 10);//Box for walls    //MMx1, MMy1, MMx2, mmy2
+  FindColorsTolerance(TPA, 15988718, MMCX - 60, MMCY - 65, MMCX + 60, MMCY + 65, 14);
   Debug('Length of walls TPA: '+ToStr(Length(TPA))+'');
-  Result := Length(TPA);
- { ATPA := TPAToATPA(TPA, 5);
-  SortATPAFrom(ATPA, Point(MMCX, MMCY));
-  debugaTPA(atpa, '');
+  ATPA := TPAToATPAEx(TPA, 35, 55);
+  DebugATPA(ATPA, '');
+  writeln('Length of potential graveyards: '+ToStr(Length(ATPA))+'');
   for I := 0 to High(ATPA) do
   begin
     MiddleTPAEx(ATPA[i], x, y);
-    debug('dist = '+tostr(distance(X, y, mmcx, mmcy))+'');
-    if (distance(X, y, mmcx, mmcy) < 21) then
+    TB := GetTPABounds(ATPA[i]);
+    if ((tb.x2 - tb.x1) > 25) and ((tb.y2 - tb.y1) > 40) then
     begin
-      IncEx(Result, Length(ATPA[i]));
+      if (PointInBox(Point(MMCX, MMCY), TB)) then   //MMCX , MMCY
+      begin
+        Debug('In Graveyard');
+        Result := True;
+        Exit;
+      end;
     end;
+    Wait(25);
   end;
-      }
-
-  debug('result = '+tostr(tostr(result)));
-  {if (Length(TPA) > 680) then
-  begin
-
-    Result := True;
-    Debug('Player: Near Bank'); //looks for the trees (if u stand by bank u see them north of u) looks for those
-  end; }
 end;
 
 function RotatePointEx(p, o:tPoint; d:Extended):TPoint ;
@@ -745,8 +743,9 @@ begin
   SetupSRL;
   DeclarePlayers;
   ActivateClient;
-  //countwallpixels;
-  //terminatescript;
+  getgraveyarddoor;
+  InGraveYard;
+  terminatescript;
 
   repeat
     if (InGame) then
