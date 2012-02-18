@@ -117,12 +117,51 @@ begin
   end;
 end;
 
+
+
+function GetGraveYardDoor : TPoint;
+
+var
+  A, X, Y : Integer;
+  TPA : TPointArray;
+  ATPA : T2DPointArray;
+  bBox : TBox;
+begin
+  if not LoggedIn then Exit;
+  FindColorsTolerance(TPA, 1271, MMX1, MMY1, MMX2, MMY2, 15);
+  ATPA := TPAToATPAEx(TPA, 1, 3);
+  SortATPASize(ATPA, False);
+  SortATPAFrom(ATPA, Point(MMCY, MMCY));
+  DebugATPA(ATPA, '');
+  for A := High(ATPA) downto 0 do
+  begin
+    MiddleTPAEx(ATPA[A], X, Y);
+    Debug('Distance from graveyard door TPoint: '+ToStr(Distance(x, y, mmcx, MMCy)));
+    if (Distance(x, y, MMCX, mmcy) < 45) then
+    begin
+      bBox := GetTPABounds(ATPA[A]);
+      Debug('Door width: '+ToStr(bBox.X2 - bBox.X1)+'');
+      Debug('Door height: '+ToStr(bBox.y2 - bBox.y1)+'');
+      if (bBox.X2 - bBox.X1 >= 0) and (bBox.Y2 - bBox.Y1 >= 3) then
+      begin
+        if (X < 1) or (Y < 1) then
+          Continue;
+        Result := Point(X, Y);
+        Debug('Door TPoint: '+ToStr(X)+', '+ToStr(Y)+'');
+        Exit;
+      end;
+    end;
+    wait(10);
+  end;
+end;
+
 function InGraveYard : Boolean;
 var
   I, X, Y : Integer;
   TPA : TPointArray;
   ATPA : T2DPointArray;
   TB : TBox;
+  TP: TPoint;
 begin
   if not LoggedIn then Exit;
 
@@ -142,9 +181,26 @@ begin
     begin
       if (PointInBox(Point(MMCX, MMCY), TB)) then   //MMCX , MMCY
       begin
-        Debug('In Graveyard');
-        Result := True;
-        Exit;
+        Debug('Maybe In Graveyard');
+        TP := GetGraveYardDoor;
+        if (DetermineTeamToJoin = 'Blue') then
+        begin
+          if (MMCX > TP.X) then
+          begin
+            Result := True;
+            Debug('In Graveyard');
+            Exit;
+          end;
+        end;
+        if (DetermineTeamToJoin = 'Red') then
+        begin
+          if (MMCX < TP.X) then
+          begin
+            Result := True;
+            Debug('In Graveyard');
+            Exit;
+          end;
+        end;
       end;
     end;
     Wait(25);
@@ -677,42 +733,6 @@ end;
 
 procedure ENDBLUEWAITINGROOM;
 begin
-end;
-
-function GetGraveYardDoor : TPoint;
-
-var
-  A, X, Y : Integer;
-  TPA : TPointArray;
-  ATPA : T2DPointArray;
-  bBox : TBox;
-begin
-  if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 1271, MMX1, MMY1, MMX2, MMY2, 15);
-  ATPA := TPAToATPAEx(TPA, 1, 3);
-  SortATPASize(ATPA, False);
-  SortATPAFrom(ATPA, Point(MMCY, MMCY));
-  DebugATPA(ATPA, '');
-  for A := High(ATPA) downto 0 do
-  begin
-    MiddleTPAEx(ATPA[A], X, Y);
-    Debug('Distance from graveyard door TPoint: '+ToStr(Distance(x, y, mmcx, MMCy)));
-    if (Distance(x, y, MMCX, mmcy) < 33) then
-    begin
-      bBox := GetTPABounds(ATPA[A]);
-      Debug('Door width: '+ToStr(bBox.X2 - bBox.X1)+'');
-      Debug('Door height: '+ToStr(bBox.y2 - bBox.y1)+'');
-      if (bBox.X2 - bBox.X1 >= 0) and (bBox.Y2 - bBox.Y1 >= 3) then
-      begin
-        if (X < 1) or (Y < 1) then
-          Continue;
-        Result := Point(X, Y);
-        Debug('Door TPoint: '+ToStr(X)+', '+ToStr(Y)+'');
-        Exit;
-      end;
-    end;
-    wait(10);
-  end;
 end;
 
 function GetLoc: String;
