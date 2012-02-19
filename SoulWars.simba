@@ -67,9 +67,19 @@ end;
 
 
 function InWaitingRoom: Boolean;
+var
+  I : Integer;
 begin
-  Result := GetColor(418, 29) = WAITING_TEXT; //Orange color in text
-  Result := GetColor(435, 33) = WAITING_TEXT; //Extra
+  Result := GetColor(418, 33) = WAITING_TEXT; //Orange color in text
+  if (not(Result)) then
+  begin
+    for I := 0 to 20 do
+    begin
+      Result := GetColor(418 + I, 33) = WAITING_TEXT; //Orange color in text
+      if (Result) then Exit;
+    end;
+  end;
+
 end;
 
 function InGame : Boolean; //It doesn't matter which team your on to do this check btw, i showed u somewhere how simple it was to do this function  ;)
@@ -174,7 +184,7 @@ begin
   begin
     MiddleTPAEx(ATPA[A], X, Y);
     Debug('Distance from graveyard door TPoint: '+ToStr(Distance(x, y, mmcx, MMCy)));
-    if (Distance(x, y, MMCX, mmcy) < 44) then
+    if (Distance(x, y, MMCX, mmcy) < 35) then
     begin
       bBox := GetTPABounds(ATPA[A]);
       Debug('Door width: '+ToStr(bBox.X2 - bBox.X1)+'');
@@ -191,7 +201,7 @@ begin
     wait(10);
   end;
 end;
-{
+
 function InGraveYard : Boolean;
 var
   I, X, Y : Integer;
@@ -206,7 +216,7 @@ begin
   if (not(InGame)) then Exit;
   if (not(CompassNorth)) then
     MakeCompass('n');
-  FindColorsTolerance(TPA, 16444139 , MMCX - 60, MMCY - 65, MMCX + 60, MMCY + 65, 25);
+  FindColorsTolerance(TPA, 15987435, MMCX - 60, MMCY - 65, MMCX + 60, MMCY + 65, 25);
   Debug('Length of walls TPA: '+ToStr(Length(TPA))+'');
   ATPA := TPAToATPAEx(TPA, 35, 55);
   DebugATPA(ATPA, '');
@@ -245,7 +255,7 @@ begin
     Wait(25);
   end;
 end;
-}
+
 
 function ClickWhiteArrowMM: Boolean; //
 
@@ -332,6 +342,7 @@ begin
 end;
 
 function ByPassWarning : Boolean;
+var I : Integer;
 begin
   if FindNPCChatText('inutes', Nothing) then
   begin
@@ -341,13 +352,16 @@ begin
     Mouse(260, 470, 14, 4, True);
     Exit;
   end;
-  if (GetColor(74, 408) = WARNING_TEXT) then
+  for I := 0 to 30 do
   begin
-    Mouse(260, 470, 15, 4, True);
-    Wait(1250 + Random(1500));
-    Mouse(258, 408, 15, 4, True);
-    Wait(1250 + Random(1500));
-    Result := True;
+    if (GetColor(41 + I, 406 + Random(3)) = WARNING_TEXT) then
+    begin
+      Mouse(260, 470, 15, 4, True);
+      Wait(1250 + Random(1500));
+      Mouse(258, 408, 15, 4, True);
+      Wait(1250 + Random(1500));
+      Result := True;
+    end;
   end;
   Result := True;
 end;
@@ -373,7 +387,7 @@ begin
   begin
     MiddleTPAEx(ATPA[A], X, Y);
     Debug('Distance from lava door: '+ToStr(Distance(x, y, MSCX, MSCY)));
-    if ((Distance(x, y, MSCX, MSCY)) < 40) then  //if we are close to barrier
+    if ((Distance(x, y, MSCX, MSCY)) < 120) then  //if we are close to barrier
     begin
       bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
       Debug('Door MS width: '+ToStr(bBox.X2 - bBox.X1)+'');
@@ -646,14 +660,14 @@ begin
         R := -6
       else
         R := 6;
-      Mouse(X + R, Y, 3, 3, True);
+      Mouse(X + R, Y + R, 3, 3, True);
       FFlag(0);
       Wait(500 + Random(500));
       SetAngle(1);
       if (DetermineTeamToJoin = 'Blue') then
       begin
         MakeCompass('e')
-        if (FindBlueBarrier(127, 94, 456, 243)) then
+        if (FindBlueBarrier(MSX1, MSY1, MSX2, MSY2)) then
         begin
           SetAngle(0);
           MakeCompass('n');
@@ -663,7 +677,7 @@ begin
       end else
       begin
         MakeCompass('w');
-        if (FindRedBarrier(1, 1, 2, 2)) then
+        if (FindRedBarrier(MSX1, MSY1, MSX2, MSY2)) then
         begin
           SetAngle(0);
           MakeCompass('n');
@@ -685,32 +699,37 @@ var
 
 begin
   if not (InGame) then Exit;
+
   Result := True;
-  if (FindBlackChatMessage('ear')) then
+  if (HPPercent < 1) then
   begin
-    Wait(5000 + Random(2500));
-    if (not(RecentDead)) then
+    while (HPPercent < 1)  do
     begin
+      if not LoggedIn then Exit;
+      Wait(250 + Random(250));
+    end;
+
+    Wait(2500 + Random(2500));
+    repeat
       Writeln('Searching for barrier, found dead');
+      SetAngle(1);
+
       if (DetermineTeamToJoin = 'Blue') then
       begin
-
-        if (FindBlueBarrier(133,53, 329, 207)) then
-        begin
-
-          RecentDead := True;
-        end;
+        if (FindBlueBarrier(MSX1, MSY1, MSX2, MSY2)) then
+           Break;
+        MakeCompass('e');
       end else
       begin
-        if (FindRedBarrier(133,53, 329, 207)) then
-        begin
-          RecentDead := True;
-        end;
+        if (FindRedBarrier(MSX1, MSY1, MSX2, MSY2)) then
+          Break;
+        MakeCompass('w');
       end;
-    end;
-  end else
-  begin
-    RecentDead := False;
+      LeaveCrowdedGrave;
+      Wait(250 + Random(250));
+    until (not(InGame)) or not (LoggedIn)
+    SetAngle(0);
+    MakeCompass('n');
   end;
   if (InWaitingRoom2) then
   begin
@@ -732,17 +751,13 @@ begin
       Wait(750 + Random(640));
       FFlag(0);
       if (DetermineTeamToJoin = 'Red') then
-        FindRedBarrier(162, 68, 363, 218)
+        FindRedBarrier(MSX1, MSY1, MSX2, MSY2)
       else
-        FindBlueBarrier(134, 124, 385, 250);
+        FindBlueBarrier(MSX1, MSY1, MSX2, MSY2);
     end;
-  end;
-
-  if (InWaitingRoom2) then
-  begin
     Debug('Backup leave method');
     LeaveCrowdedGrave;
-  end;
+  end else
   begin
     if (not(ClickWhiteArrowMM)) then
       Writeln('Fight');
@@ -954,7 +969,7 @@ begin
   DeclarePlayers;
   ActivateClient;
   Mouse(88, 493, 8, 8, True);//Set chat -> Game
-  TeamOn := 'Blue'; //for now just set this...
+  TeamOn := 'Red'; //for now just set this...
   inwaitingroom2 := true;   //leave this to true if ur starting in the aiting room or ion the graveyard
 
   //leavecrowdedgrave;
