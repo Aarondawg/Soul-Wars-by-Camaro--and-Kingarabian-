@@ -1,17 +1,41 @@
 program SW;
+{$DEFINE SMART}
 {$I SRL/SRL.simba}
 {$I SRL/SRL/misc/debug.simba}
 {Read: Debugging 9/10 time causes Simba to lose focus of Runescape. Right now a lot of the previous functions are acting up.
 Colors need to be updated? To tired right now lol will continue working tomorrow.
 Also if a player is covering the barrier in the graveyard our function screws up.
 Some work to do but will figure it out. I'll continue learning and will reach our potential. }
+
+
+
+
 const
   DebugScript = True;
   //Removed ur other const, cause its the same thing as this one
   Team = 'Random'; // Random, Last Won, Last Lost , Always Red, Always Blue,
 
+
+
+const
+  SW_ROADCOLOR    = 6846589 ; // Color of the roads out side of the game. (gray)
+  SW_TREECOLOR    = 1071141 ; // Tree color outside of the game (Green)
+  SW_WATERCOLOR   = 9932162 ; // Water surronding blue waiting room ( blue)
+  SW_LAVACOLOR    = 1880011 ; // Lava surrounding the red waiting room (orange/yellowish)
+  DOORCOLOR       = 67059   ; // Any door color (MM)
+  MS_BARRIER_RED  = 5659569 ; // Barrier color of red team. MS
+  MS_BARRIER_BLUE = 11234661; // Barrier color of blue team. MS
+  WARNING_TEXT    = 2302945 ; // Chat box warning text when you go to join a game
+  ARROW_MM_WHITE  = 13816788; // White arrow in game MM
+  BLUE_NPC_MM     = 14519141; // Blue dots on MM
+  WAITING_TEXT    = 39423   ; // Orange text to detect if we are in the waiting room
+
+
+
 var
   TeamOn : String;
+  RecentDead, InWaitingRoom2: Boolean;
+
 
 procedure DeclarePlayers;
 begin
@@ -44,8 +68,8 @@ end;
 
 function InWaitingRoom: Boolean;
 begin
-  Result := GetColor(418, 29) = 39423; //Orange color in text
-  Result := GetColor(429, 36) = 39423; //Extra
+  Result := GetColor(418, 29) = WAITING_TEXT; //Orange color in text
+  Result := GetColor(435, 33) = WAITING_TEXT; //Extra
 end;
 
 function InGame : Boolean; //It doesn't matter which team your on to do this check btw, i showed u somewhere how simple it was to do this function  ;)
@@ -122,7 +146,7 @@ begin
   if (not(CompassNorth)) then
     Exit;
   if (InWaitingRoom) then Exit;
-  FindColorsTolerance(TPA, 1136677, 605, 12, 664, 39, 10);//Box on northern part of MM(alot of trees)
+  FindColorsTolerance(TPA, SW_TREECOLOR, 605, 12, 664, 39, 15);//Box on northern part of MM(alot of trees)
   Debug('Length of MM Trees TPA: '+ToStr(Length(TPA))+'');
   if (Length(TPA) > 680) then
   begin
@@ -142,7 +166,7 @@ var
   bBox : TBox;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 328953, MMX1, MMY1, MMX2, MMY2, 15);
+  FindColorsTolerance(TPA, DOORCOLOR, MMX1, MMY1, MMX2, MMY2, 15);
   ATPA := TPAToATPAEx(TPA, 1, 2);
   SortATPAFrom(ATPA, Point(MMCY, MMCY));
   DebugATPA(ATPA, '');
@@ -150,7 +174,7 @@ begin
   begin
     MiddleTPAEx(ATPA[A], X, Y);
     Debug('Distance from graveyard door TPoint: '+ToStr(Distance(x, y, mmcx, MMCy)));
-    if (Distance(x, y, MMCX, mmcy) < 45) then
+    if (Distance(x, y, MMCX, mmcy) < 44) then
     begin
       bBox := GetTPABounds(ATPA[A]);
       Debug('Door width: '+ToStr(bBox.X2 - bBox.X1)+'');
@@ -167,7 +191,7 @@ begin
     wait(10);
   end;
 end;
-
+{
 function InGraveYard : Boolean;
 var
   I, X, Y : Integer;
@@ -221,8 +245,9 @@ begin
     Wait(25);
   end;
 end;
+}
 
-function FindWhiteArrowMM: Boolean; //
+function ClickWhiteArrowMM: Boolean; //
 
 var
   A, X, Y, Width, Height : Integer;
@@ -232,16 +257,16 @@ var
 begin
   if not LoggedIn then Exit;
   MakeCompass('N');      //Has to be N or else you get some weird results at times.
-  FindColorsTolerance(TPA, 13816788 , MMX1, MMY1, MMX2, MMY2, 20); //Small box around area of arrow
+  FindColorsTolerance(TPA, ARROW_MM_WHITE , MMX1, MMY1, MMX2, MMY2, 20); //Small box around area of arrow
   ATPA := TPAToATPAEx(TPA, 3,3);//split the big tpa into small boxs
   SortATPAFrom(ATPA, Point(MMCX, MMCY)); //
   for A := High(ATPA) downto 0 do //Sort from FARTHEST away ;)
   begin
     MiddleTPAEx(ATPA[A], X, Y);
-    //Debug('Distance from arrow MM: '+ToStr(Distance(x, y, MMCX, MMCy)));
+    Debug('Distance from arrow MM: '+ToStr(Distance(x, y, MMCX, MMCy)));
     bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
-    //Debug('ARROW Mm width: '+ToStr(bBox.X2 - bBox.X1)+'');
-    //Debug('ARROW Mm height: '+ToStr(bBox.y2 - bBox.y1)+'');
+    Debug('ARROW Mm width: '+ToStr(bBox.X2 - bBox.X1)+'');
+    Debug('ARROW Mm height: '+ToStr(bBox.y2 - bBox.y1)+'');
     Width := (BBox.X2-BBox.X1);
     Height := (BBox.Y2-BBox.Y1);
     //HINT: for starting purposes, make sure the arrow is atleast 60 pixels away from MMCX , MMCY
@@ -249,10 +274,15 @@ begin
     If (Distance(X, Y, MMCX, MMCY) >= 60) then //atleast 60 Pixels away...
     begin
       Writeln('Arrow is 60 pixels away');
-      If (Width <= 4) and (Height <= 3) then //Checks to see if TPA matches the info we got from the debug.
+      If (Width <= 4) and (Height <= 3) and (Width >= 1) and (Height >= 1) then //Checks to see if TPA matches the info we got from the debug.
       begin
         WriteLn('Found White Arrow');
-        MoveMouse(X, Y);      //Just to see if it works. It works, but if Red Arrow is covering, the TPA is still found,
+        Mouse(X, Y, 7, 7, True);      //Just to see if it works. It works, but if Red Arrow is covering, the TPA is still found,
+        Wait(500 + Random(500));
+        FFlag(0);
+        Wait(500 + Random(500));
+        Result := True;
+        Exit;
       end;                   //But the color is lost.
     end;
   end;
@@ -311,7 +341,7 @@ begin
     Mouse(260, 470, 14, 4, True);
     Exit;
   end;
-  if (GetColor(83, 408) = 2302945) then
+  if (GetColor(74, 408) = WARNING_TEXT) then
   begin
     Mouse(260, 470, 15, 4, True);
     Wait(1250 + Random(1500));
@@ -325,7 +355,7 @@ end;
 
 
 
-function FindRedBarrier: Boolean; //continues to work all right
+function FindRedBarrier(x1, y1, x2, y2: Integer): Boolean; //continues to work all right
 
 var
   A, X, Y : Integer;
@@ -334,9 +364,7 @@ var
   bBox : TBox;
 begin
   if not LoggedIn then Exit;
-  SetAngle(1);
-  MakeCompass('w');
-  FindColorsTolerance(TPA, 5988801, 162, 68, 363, 218, 30); //Small box around area of portal
+  FindColorsTolerance(TPA, MS_BARRIER_RED, x1, y1, x2, y2, 30); //Small box around area of portal
   ATPA := TPAToATPAEx(TPA, 2,3);//split the big tpa into small boxs
   SortATPASize(ATPA, True); //sort by the bigger boxes first
   SortATPAFrom(ATPA, Point(MSCX, MSCY)); //and the ones closest to us
@@ -362,6 +390,7 @@ begin
           Result := True;
           SetAngle(0);
           MakeCompass('n');
+          InWaitingRoom2 := False;
           Exit;
         end;
       end;
@@ -370,7 +399,7 @@ begin
   end;
 end;
 
-function FindBlueBarrier: Boolean;//Needs some work. Sometimes finds the barrier sometimes doesnt. Gotta update some input.
+function FindBlueBarrier(x1, y1, x2, y2: Integer): Boolean;//Needs some work. Sometimes finds the barrier sometimes doesnt. Gotta update some input.
 var
   A, X, Y : Integer;
   TPA : TPointArray;
@@ -380,7 +409,7 @@ begin
   if not LoggedIn then Exit;
   SetAngle(1);
   MakeCompass('e');
-  FindColorsTolerance(TPA, 9203810, 134, 124, 385, 250, 30); //Small box around area of portal
+  FindColorsTolerance(TPA, MS_BARRIER_BLUE, x1, y1, x2, y2, 30); //Small box around area of portal
   ATPA := TPAToATPAEx(TPA, 2,3);//split the big tpa into small boxs
   SortATPASize(ATPA, True); //sort by the bigger boxes first
   SortATPAFrom(ATPA, Point(MSCX, MSCY)); //and the ones closest to us
@@ -406,6 +435,7 @@ begin
           Result := True;
           SetAngle(0);
           MakeCompass('n');
+          InWaitingRoom2 := False;
           Exit;
         end;
       end;
@@ -428,7 +458,7 @@ var
   bBox : TBox;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 2273738, MMX1, MMY1, MMX2, MMY2, 11);
+  FindColorsTolerance(TPA, SW_LAVACOLOR, MMX1, MMY1, MMX2, MMY2, 11);
   atpa := SplitTPAEx(TPA, 25, 25);
   SortATPASize(ATPA, True);
 
@@ -460,7 +490,7 @@ var
   TP : Tpoint;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 132331, MMX1, MMY1, MMX2, MMY2, 15);
+  FindColorsTolerance(TPA, DOORCOLOR, MMX1, MMY1, MMX2, MMY2, 15);
   ATPA := TPAToATPAEx(TPA, 1, 3);
   SortATPASize(ATPA, False);
   TP := GetRedWaitingRoom;
@@ -526,7 +556,7 @@ begin
   if not LoggedIn then Exit;
   SetAngle(1);
   MakeCompass('E');
-  FindColorsTolerance(TPA, 5988801, 162, 68, 363, 218, 30); //Small box around area of portal
+  FindColorsTolerance(TPA, MS_BARRIER_RED, 162, 68, 363, 218, 30); //Small box around area of portal
   ATPA := TPAToATPAEx(TPA, 2,3);//split the big tpa into small boxs
   SortATPASize(ATPA, True); //sort by the bigger boxes first
   SortATPAFrom(ATPA, Point(MSCX, MSCY)); //and the ones closest to us
@@ -559,7 +589,7 @@ begin
             Wait(1500 + Random(1500));
             if (Random(3) = 1) then
             begin
-              Mouse(MSCX - 100, MSCY, 40, 40, True);
+              Mouse(MSCX + 100, MSCY, 40, 40, True);
               FFlag(0);
               Wait(1500 + Random(1500));
             end;
@@ -568,7 +598,7 @@ begin
           begin
             if (Random(3) = 1) then
             begin
-              Mouse(MSCX - 100, MSCY, 40, 40, True);
+              Mouse(MSCX + 100, MSCY, 40, 40, True);
               FFlag(0);
               Wait(1500 + Random(1500));
             end;
@@ -586,6 +616,69 @@ begin
 end;
 
 
+function GetNpcsATPA: TpointArray;
+var
+  TPA: TPointArray;
+
+
+begin
+ //if not (LoggedIn) then Exit;
+ FindColorsTolerance(TPA, BLUE_NPC_MM, MMX1, MMY1, MMX2, MMY2, 20);
+ Result := TPA;
+end;
+
+function LeaveCrowdedGrave: Boolean;
+var
+  TPA, TPA2: TPointArray;
+  ATPA: T2DPointArray;
+  I, X, Y, R : Integer;
+begin
+  TPA := GetNPCSATPA;
+  writeln(length(tpa));
+  ATPA := SplitTPA(TPA, 10);
+  SortATPAFrom(ATPA, Point(MMCX, MMCY));
+  for I := 0 to High(ATPA) do
+  begin
+    MiddleTPAEx(ATPA[i], X, Y);
+    if (Distance(X, Y, MMCX, MMCY) < 25) then
+    begin
+      if (DetermineTeamToJoin = 'Blue') then
+        R := -6
+      else
+        R := 6;
+      Mouse(X + R, Y, 3, 3, True);
+      FFlag(0);
+      Wait(500 + Random(500));
+      SetAngle(1);
+      if (DetermineTeamToJoin = 'Blue') then
+      begin
+        MakeCompass('e')
+        if (FindBlueBarrier(127, 94, 456, 243)) then
+        begin
+          SetAngle(0);
+          MakeCompass('n');
+          Result := True;
+          Exit;
+        end;
+      end else
+      begin
+        MakeCompass('w');
+        if (FindRedBarrier(1, 1, 2, 2)) then
+        begin
+          SetAngle(0);
+          MakeCompass('n');
+          Result := True;
+          Exit;
+        end;
+      end;
+      SetAngle(0);
+      MakeCompass('n');
+    end;
+  end;
+end;
+
+
+
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 var
   TP : TPoint;
@@ -593,31 +686,66 @@ var
 begin
   if not (InGame) then Exit;
   Result := True;
-  if (InGraveYard) then
+  if (FindBlackChatMessage('ear')) then
+  begin
+    Wait(5000 + Random(2500));
+    if (not(RecentDead)) then
+    begin
+      Writeln('Searching for barrier, found dead');
+      if (DetermineTeamToJoin = 'Blue') then
+      begin
+
+        if (FindBlueBarrier(133,53, 329, 207)) then
+        begin
+
+          RecentDead := True;
+        end;
+      end else
+      begin
+        if (FindRedBarrier(133,53, 329, 207)) then
+        begin
+          RecentDead := True;
+        end;
+      end;
+    end;
+  end else
+  begin
+    RecentDead := False;
+  end;
+  if (InWaitingRoom2) then
   begin
     TP := GetGraveYardDoor;
     if (TP.X > 0) then
     begin
-      Mouse(TP.X + 1, TP.Y - 4, 2, 1, True);
-      Wait(750 + Random(640));
-      FFlag(0);
-      Wait(750 + Random(640));
-      if (DetermineTeamToJoin = 'Red') then
-        FindRedBarrier
-      else
-        FindBlueBarrier;
-    end else
-    begin
-      if (DetermineTeamToJoin = 'Red') then
+      if (DetermineTeamToJoin = 'Blue') then
       begin
-        Walking(2501415, 17, Point(MMCX + 25, MMCY), 2, 2);
-        FindRedBarrier;
+        Mouse(TP.X + 1, TP.Y + 5, 2, 1, True) ;
+        SetAngle(1);
+        MakeCompass('e');
       end else
       begin
-        Walking(2501415, 17, Point(MMCX - 25, MMCY), 2, 2);
-        FindBlueBarrier;
+        Mouse(TP.X + 1, TP.Y -5, 2, 1, True);
+        SetAngle(1);
+        MakeCompass('w');
       end;
+
+      Wait(750 + Random(640));
+      FFlag(0);
+      if (DetermineTeamToJoin = 'Red') then
+        FindRedBarrier(162, 68, 363, 218)
+      else
+        FindBlueBarrier(134, 124, 385, 250);
     end;
+  end;
+
+  if (InWaitingRoom2) then
+  begin
+    Debug('Backup leave method');
+    LeaveCrowdedGrave;
+  end;
+  begin
+    if (not(ClickWhiteArrowMM)) then
+      Writeln('Fight');
   end;
 end;
 
@@ -634,7 +762,7 @@ var
   bBox : TBox;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 10391691, MMX1, MMY1, MMX2, MMY2, 11);
+  FindColorsTolerance(TPA, SW_WATERCOLOR, MMX1, MMY1, MMX2, MMY2, 11);
   atpa := SplitTPAEx(TPA, 25, 25);
   SortATPASize(ATPA, True);
 
@@ -666,7 +794,7 @@ var
   TP : Tpoint;
 begin
   if not LoggedIn then Exit;
-  FindColorsTolerance(TPA, 132331, MMX1, MMY1, MMX2, MMY2, 15);
+  FindColorsTolerance(TPA, DOORCOLOR, MMX1, MMY1, MMX2, MMY2, 15);
   ATPA := TPAToATPAEx(TPA, 1, 3);
   SortATPASize(ATPA, False);
   TP := GetBlueWaitingRoom;
@@ -732,7 +860,7 @@ begin
   if not LoggedIn then Exit;
   SetAngle(1);
   MakeCompass('W');
-  FindColorsTolerance(TPA, 9203810, 162, 68, 363, 218, 30); //Small box around area of portal
+  FindColorsTolerance(TPA, MS_BARRIER_BLUE, 162, 68, 363, 218, 30); //Small box around area of portal
   ATPA := TPAToATPAEx(TPA, 2,3);//split the big tpa into small boxs
   SortATPASize(ATPA, True); //sort by the bigger boxes first
   SortATPAFrom(ATPA, Point(MSCX, MSCY)); //and the ones closest to us
@@ -765,16 +893,17 @@ begin
             Wait(1500 + Random(1500));
             if (Random(3) = 1) then
             begin
-              Mouse(MSCX + 100, MSCY, 40, 40, True);
+              Mouse(MSCX - 100, MSCY, 40, 40, True);
               FFlag(0);
               Wait(1500 + Random(1500));
+
             end;
             Exit;
           end else
           begin
             if (Random(3) = 1) then
             begin
-              Mouse(MSCX + 100, MSCY, 40, 40, True);
+              Mouse(MSCX - 100, MSCY, 40, 40, True);
               FFlag(0);
               Wait(1500 + Random(1500));
             end;
@@ -804,6 +933,7 @@ begin
       if (InWaitingRoom) then // check if were in waiting room (Simple boolean)
       begin
         Result := 'Waiting Room';
+        InWaitingRoom2 := True;
         Exit;
       end;                  //if not, lets GOOO!
       Result := 'EnterWaitingRoom';
@@ -816,12 +946,19 @@ begin
 end;
 
 begin
+  Smart_Server := 44;
+  Smart_Members := True;
+  Smart_Signed := True;
+  Smart_SuperDetail := False;
   SetupSRL;
   DeclarePlayers;
   ActivateClient;
-  FindWhiteArrowMM;
-  TerminateScript;
+  Mouse(88, 493, 8, 8, True);//Set chat -> Game
   TeamOn := 'Blue'; //for now just set this...
+  inwaitingroom2 := true;   //leave this to true if ur starting in the aiting room or ion the graveyard
+
+  //leavecrowdedgrave;
+ // terminatescript;
   repeat
     if (InGame) then
     begin
@@ -840,11 +977,10 @@ begin
         if (not(CompassNorth)) then // If your compass is east/west already from a previous attempt, then just try again
         begin
           if (DetermineTeamToJoin = 'Red') then
-            if (EnterRedWaitingRoom) then
-              Break;
+            EnterRedWaitingRoom;
           if (DetermineTeamToJoin = 'Blue') then
-            if (EnterBlueWaitingRoom) then
-              Break;
+            EnterBlueWaitingRoom;
+
         end else
         begin
           if (DetermineTeamToJoin = 'Red') then
@@ -865,6 +1001,7 @@ begin
       end;
       'WaitingRoom':
       begin
+        InWaitingRoom2 := True;
         Wait(1250 + Random(1250));
       end;
       'InGame':
