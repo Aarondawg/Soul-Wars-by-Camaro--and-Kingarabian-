@@ -1,0 +1,4 @@
+Detect if in center by using the blue water, and PointInBox.
+Detect SmallGraveyard
+Test 
+Fixed arrow clicking..

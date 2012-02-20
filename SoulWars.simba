@@ -409,10 +409,15 @@ begin
       begin
         Debug('Found Arrow');
         Result := True;
-        Mouse(X, Y, 4, 4, True);
-        Wait(4500 + Random(5000));
-        Wait(250 + Random(250));
-        FFlag(0);
+        X := X + RandomRange(-4, 4);
+        Y := Y + RandomRange(-4, 4);
+        if (RS_OnMinimap(X, y)) then
+        begin
+          Mouse(X, Y, 0, 0, True);
+          //Wait(4500 + Random(5000));
+          Wait(250 + Random(250));
+          FFlag(0);
+        end;
 
       end;
     end;
@@ -780,6 +785,16 @@ function InSmallGrave: Boolean;
 begin
 
 end;
+
+
+procedure DoFight;
+begin
+end;
+
+function WalkAndCheckDead(Grave: Integer): Boolean;
+begin
+end;
+
 function FindBlueBarrier: Boolean;
 var
   X, Y, I, A, Height, Width: Integer;//I dont know why i added'a' yet
@@ -790,9 +805,9 @@ var
 begin
   if not LoggedIn then Exit;
   Walking(4619616 , 15, Point(607, 92), 5, 5); //attempts to walk near the barrier..
-  //SetAngle(1);
+  SetAngle(1);
   MakeCompass('E');
-  FindColorsTolerance(TPA, 11235933, MSX1, MSY1, MSX2, MSY2, 15);
+  FindColorsTolerance(TPA, 10056026 , MSX1, MSY1, MSX2, MSY2, 15);
   ATPA := TPAToATPAEx(TPA, 50, 50);
   SortATPAFrom(ATPA, Point(MSCX, MSCY));
   //DebugATPA(ATPA, '');
@@ -825,6 +840,7 @@ begin
           Wait(400+Random(125));
           Result:=True;
           Makecompass('n');
+          setangle(0);
           Exit;
        end;
       end;
@@ -883,14 +899,6 @@ begin
   end;
 end;
 
-procedure DoFight;
-begin
-end;
-
-function WalkAndCheckDead(Grave: Integer): Boolean;
-begin
-end;
-
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 var
   TP : TPoint;
@@ -902,24 +910,15 @@ begin
   if (InGraveYard) or (InWaitingRoom2) then
   begin
     TP := GetGraveYardDoor;
-    Mouse(TP.X, TP.Y, 2, 1, True) ;
+    //Mouse(TP.X, TP.Y, 2, 1, True) ;
     FFlag(0);
-    SetAngle(1);
+  //  SetAngle(1);
     if (DetermineTeamToJoin = 'Red') then
-    begin
-      MakeCompass('w')
-     // Mouse(TP.X - 6, TP.Y, 2, 1, True) ;
-      //FFlag(0);
-    end else
-    begin
-      Makecompass('e');
-    //  Mouse(TP.X + 6, TP.Y, 2, 1, True) ;
-     // FFlag(0);
-    end;
-    if (FindBarrierGame(MSX1, MSY1, MSX2, MSY2)) then
-      Debug('Left Grave Yard');
-  //  if (LeaveCrowdedGrave) then
-    //  Debug('Left Grave');
+      FindRedBarrier
+    else
+      FindBlueBarrier;
+
+
   end else
   begin
     if (not(ClickOtherArrow)) then
@@ -1131,6 +1130,8 @@ begin
   Smart_Signed := True;
   Smart_SuperDetail := False;
   SetupSRL;
+  Reincarnate:=true;
+
   DeclarePlayers;
   ActivateClient;
   Mouse(88, 493, 8, 8, True);//Set chat -> Game
