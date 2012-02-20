@@ -245,6 +245,19 @@ begin
   end;
 end;
 
+function AnyNPCOnScreen: Boolean;
+var
+  TPA: TPointArray;
+  ATPA: T2DPointArray;
+
+begin
+ //if not (LoggedIn) then Exit;
+ FindColorsTolerance(TPA, 193785 , MMX1, MMY1, MMX2, MMY2, 20);
+ ATPA := TPAToATPA(TPA, 7);
+ if (Length(ATPA) > 1) then
+   Result := True;
+end;
+
 function InGraveYard : Boolean;
 var
   I, X, Y : Integer;
@@ -257,6 +270,7 @@ begin
 
   if (InWaitingRoom) then Exit;
   if (not(InGame)) then Exit;
+  if (AnyNPCOnScreen) then Exit;
   if (not(CompassNorth)) then
     MakeCompass('n');
   FindColorsTolerance(TPA, 15987435, 593, 46, 658, 116, 25);
@@ -274,6 +288,7 @@ begin
       if (PointInBox(Point(MMCX, MMCY), TB)) then   //MMCX , MMCY
       begin
         Debug('Maybe In Graveyard');
+
         TP := GetGraveYardDoor;
         if (DetermineTeamToJoin = 'Blue') then
         begin
@@ -651,7 +666,7 @@ begin
   begin
     MiddleTPAEx(ATPA[A], X, Y);
     Debug('Distance from lava door: '+ToStr(Distance(x, y, MSCX, MSCY)));
-    if ((Distance(x, y, MSCX, MSCY)) < 40) then  //if we are close to barrier
+    if ((Distance(x, y, MSCX, MSCY)) < 65) then  //if we are close to barrier
     begin
       bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
       Debug('Door MS width: '+ToStr(bBox.X2 - bBox.X1)+'');
@@ -701,8 +716,7 @@ procedure ENDREDWAITINGROOM;
 begin
 end;
 
-
-function GetNpcsATPA: TpointArray;
+function GetNPCsATPA: TPointArray;
 var
   TPA: TPointArray;
 
@@ -719,9 +733,9 @@ var
   ATPA: T2DPointArray;
   I, X, Y, R : Integer;
 begin
-  TPA := GetNPCSATPA;
+  TPA := GetNPCsATPA;
   writeln(length(tpa));
-  ATPA := SplitTPA(TPA, 10);
+  ATPA := SplitTPA(TPA, 16);
   SortATPAFrom(ATPA, Point(MMCX, MMCY));
   for I := 0 to High(ATPA) do
   begin
@@ -786,84 +800,31 @@ begin
   if not (InGame) then Exit;
 
   Result := True;
-  if (HPPercent < 1) or (InSmallGrave) or (InGraveYard) then
+  if (InGraveYard) or (InWaitingRoom2) then
   begin
-    WalkFurther := False;
-    while (HPPercent < 1)  do
-    begin
-      if not LoggedIn then Exit;
-      Wait(250 + Random(250));
-    end;
-
-    Wait(7500 + Random(2500));
-    repeat
-      Writeln('Searching for barrier, found dead');
-      SetAngle(1);
-      if (InGraveYard) then
-      begin
-        TP := GetGraveYardDoor;
-        if (DetermineTeamToJoin = 'Red') then
-        begin
-          MakeCompass('w')
-          Mouse(TP.X - 6, TP.Y + 2, 2, 1, True) ;
-          FFlag(0);
-        end else
-        begin
-          Makecompass('e');
-          Mouse(TP.X + 6, TP.Y - 2, 2, 1, True) ;
-          FFlag(0);
-        end;
-      end else
-       MakeCompass('s');
-      if (DetermineTeamToJoin = 'Blue') then
-      begin
-        if (FindBarrierGame(MSX1, MSY1, MSX2, MSY2)) then
-           Break;
-      end else
-      begin
-        if (FindBarrierGame(MSX1, MSY1, MSX2, MSY2)) then
-          Break;
-      end;
-      LeaveCrowdedGrave;
-      Wait(1750 + Random(1250));
-    until (not(InGame)) or not (LoggedIn)
-    SetAngle(0);
-    MakeCompass('n');
-  end;
-  if (InWaitingRoom2) then
-  begin
-    WalkFurther := False;
     TP := GetGraveYardDoor;
-    if (TP.X > 0) then
+    SetAngle(1);
+    if (DetermineTeamToJoin = 'Red') then
     begin
-      if (DetermineTeamToJoin = 'Blue') then
-      begin
-        Mouse(TP.X - 6, TP.Y + 2, 2, 1, True) ;
-        SetAngle(1);
-        MakeCompass('e');
-      end else
-      begin
-        Mouse(TP.X + 6, TP.Y - 2, 2, 1, True);
-        SetAngle(1);
-        MakeCompass('w');
-      end;
-
-      Wait(750 + Random(640));
+      MakeCompass('w')
+      Mouse(TP.X - 6, TP.Y, 2, 1, True) ;
       FFlag(0);
-      if (DetermineTeamToJoin = 'Red') then
-        FindBarrierGame(67, 100, 381, 236)
-      else
-        FindBarrierGame(MSX1, MSY1, MSX2, MSY2);
     end else
     begin
-      Debug('Backup leave method');
-      LeaveCrowdedGrave;
+      Makecompass('e');
+      Mouse(TP.X + 6, TP.Y, 2, 1, True) ;
+      FFlag(0);
     end;
+    if (FindBarrierGame(MSX1, MSY1, MSX2, MSY2)) then
+      Debug('Left Grave Yard');
+  //  if (LeaveCrowdedGrave) then
+    //  Debug('Left Grave');
   end else
   begin
     if (not(ClickOtherArrow)) then
       DoFight;
   end;
+
 end;
 
 
@@ -987,7 +948,7 @@ begin
   begin
     MiddleTPAEx(ATPA[A], X, Y);
     Debug('Distance from water door: '+ToStr(Distance(x, y, MSCX, MSCY)));
-    if ((Distance(x, y, MSCX, MSCY)) < 40) then  //if we are close to barrier
+    if ((Distance(x, y, MSCX, MSCY)) < 65) then  //if we are close to barrier
     begin
       bBox := GetTPABounds(ATPA[A]);   //get a TBOX of the atpa
       Debug('Door MS width: '+ToStr(bBox.X2 - bBox.X1)+'');
