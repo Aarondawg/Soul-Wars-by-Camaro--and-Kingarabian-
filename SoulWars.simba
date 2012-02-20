@@ -780,7 +780,108 @@ function InSmallGrave: Boolean;
 begin
 
 end;
+function FindBlueBarrier: Boolean;
+var
+  X, Y, I, A, Height, Width: Integer;//I dont know why i added'a' yet
+  TPA : array of TPoint; //Same thing
+  ATPA : T2DPointArray;
+  bBox : TBox;
 
+begin
+  if not LoggedIn then Exit;
+  Walking(4619616 , 15, Point(607, 92), 5, 5); //attempts to walk near the barrier..
+  //SetAngle(1);
+  MakeCompass('E');
+  FindColorsTolerance(TPA, 11235933, MSX1, MSY1, MSX2, MSY2, 15);
+  ATPA := TPAToATPAEx(TPA, 50, 50);
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));
+  //DebugATPA(ATPA, '');
+  for I := 0 to High(ATPA) do
+  begin
+    MiddleTPAEx(ATPA[I], X, Y);
+    If (X < 1) or (Y < 1) then
+    begin
+      Writeln('0');
+      Continue;
+    end;
+    if (Y > MSCY) then
+    begin
+      Writeln('1');
+      BBox :=  GetTPABounds(ATPA[I]);
+      Width := (BBox.X2-BBox.X1);
+      Height := (BBox.Y2-BBox.Y1);
+      WriteLn('Width:'+ToStr(Width));
+      WriteLn('Height:'+ToStr(Height));
+      If (Width >= 22) and (Height >= 10) then
+      begin
+        Writeln('2');
+        MMouse(X, Y, 6, 3);
+        Wait(100+Random(50));
+        if IsUpText('arrie') then
+        begin
+          GetMousePos(X, Y);
+          Mouse(X, Y, 0, 0, True);
+          FFlag(0);
+          Wait(400+Random(125));
+          Result:=True;
+          Makecompass('n');
+          Exit;
+       end;
+      end;
+   end;
+  end;
+end;
+function FindRedBarrier: Boolean;
+var
+  X, Y, I, A, Height, Width: Integer;//I dont know why i added'a' yet
+  TPA : array of TPoint; //Same thing
+  ATPA : T2DPointArray;
+  bBox : TBox;
+
+begin
+  if not LoggedIn then Exit;
+  Walking(2827565, 15, Point(638, 84), 5, 5);
+ // SetAngle(1);
+  MakeCompass('W');
+  FindColorsTolerance(TPA, 5923013, MSX1, MSY1, MSX2, MSY2, 15);
+  ATPA := TPAToATPAEx(TPA, 50, 50);
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));//Sorting thru the ATPA
+  //DebugATPA(ATPA, '');
+  for I := 0 to High(ATPA) do   //looping...
+  begin
+    MiddleTPAEx(ATPA[I], X, Y);
+    If (X < 1) or (Y < 1) then //dunno why i have this here
+    begin
+      Writeln('0');
+      Continue;
+    end;
+    if (Y > MSCY) then
+    begin
+      Writeln('1');
+      BBox :=  GetTPABounds(ATPA[I]);
+      Width := (BBox.X2-BBox.X1);
+      Height := (BBox.Y2-BBox.Y1);
+      WriteLn('Width:'+ToStr(Width));
+      WriteLn('Height:'+ToStr(Height));
+      If (Width >= 22) and (Height >= 10) then
+      begin
+        Writeln('2');
+        MMouse(X, Y, 6, 3);
+        Wait(100+Random(50));
+        if IsUpText('arrie') then
+        begin
+          GetMousePos(X, Y);
+          Mouse(X, Y, 0, 0, True);
+          FFlag(0);
+          Wait(400+Random(125));
+          Result:=True;
+          Makecompass('n');
+          Exit;
+        end;
+      end;
+   end;
+  end;
+end;
 
 procedure DoFight;
 begin
