@@ -36,6 +36,8 @@ const
   WAITING_TEXT    = 39423   ; // Orange text to detect if we are in the waiting room
   LARGE_GRAVE_WALL= 15854326; // Wall MM of large grave.
   SMALL_GRAVE_WALL= 15527151; // Wall MM of small grave.
+  BLUE_CAPE        = 3416080 ; // blue teams cape
+  RED_CAPE        = 1249591 ; // Red Teams cape
 
 const
   MiniMapWidth = 154;
@@ -662,7 +664,8 @@ begin
   TP := SPS_GetMyPos;
   if (DetermineTeamToJoin = 'Blue') then
   begin
-    Debug('Blue not supported');
+    Box := PointToBox(Point(385, 5035), Point(415, 5075));
+    Result := PointInBox(TP, Box);
   end else
   begin
     Box := PointToBox(Point(921, 4974), Point(955, 5018));
@@ -676,15 +679,15 @@ var
   TP: TPoint;
 begin
   TP := SPS_GetMyPos;
-  if (DetermineTeamToJoin = 'Blue') then
-  begin
-    Box := PointToBox(Point(483, 5075), Point(494, 5088));
-    Result := PointInBox(TP, Box);
-  end else
-  begin
-    Box := PointToBox(Point(846, 4965), Point(860, 4981));
-    Result := PointInBox(TP, Box);
-  end;
+
+  Box := PointToBox(Point(483, 5075), Point(494, 5088));
+  Result := PointInBox(TP, Box);
+
+  if (Result) then Exit;
+
+  Box := PointToBox(Point(846, 4965), Point(860, 4981));
+  Result := PointInBox(TP, Box);
+
 end;
 
 function FindBlueBarrier: Boolean;
@@ -707,6 +710,44 @@ begin
         Exit;
       end;
   end;
+end;
+
+function AttackPlayer : Boolean;
+var
+  TPA: TPointArray;
+  ATPA: T2DPointArray;
+  X, Y, I: Integer;
+begin
+  if (DetermineTeamToJoin = 'Red') then
+
+    FindColorsTolerance(TPA, BLUE_CAPE, 9, 66, 494, 323, 8)
+  else
+    FindColorsTolerance(TPA, RED_CAPE, 9, 66, 494, 323, 8);
+
+  ATPA := TPAToATPAEx(TPA, 7, 7);
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));
+  for I := 0 to High(ATPA) do
+  begin
+    MiddleTPAEx(ATPA[i], x, y);
+    if (PointInBox(Point(x, y), IntToBox(233, 137, 284, 193))) then //if the point is our character
+      Continue;
+    if (PointInBox(Point(x, y), IntToBox(240, 24, 390, 85))) then //grave yard control
+      Continue;
+    if (PointInBox(Point(x, y), IntToBox(391, 22, 502, 175))) then//Activity bar and shit near that
+      Continue;
+
+    Mouse(X, Y, 7, 7, False);
+    if WaitOption('ttack', 250) then
+    begin
+      FFlag(0);
+      Result := True;
+      Exit;
+    end;
+    Wait(500);
+
+
+  end;
+
 end;
 
 function FindRedBarrier: Boolean;
@@ -771,7 +812,7 @@ begin
       if (DetermineTeamToJoin = 'Red') then
         SPS_WalkToPos(Point(960, 4995))
       else
-        SPS_WalkToPos(Point(730, 5300));
+        SPS_WalkToPos(Point(415, 5075));
       FFlag(0);
       repeat
         if (DetermineTeamToJoin = 'Red') then
@@ -787,6 +828,7 @@ begin
           if (FindBlueBarrier) then
           begin
             Mouse(585, 49, 15, 15, True);
+            FFlag(0);
             Exit;
           end;
         end;
@@ -797,7 +839,8 @@ begin
     until (not(InLargeGrave)) or (not(InGame)) or (not(LoggedIn))
   end else
   begin
-      DoFight;
+    if (AttackPlayer) then
+      Wait(1250 + Random(2000));
   end;
 
 end;
@@ -982,7 +1025,7 @@ begin
   DeclarePlayers;
   ActivateClient;
   Mouse(88, 493, 8, 8, True);//Set chat -> Game
-  TeamOn := 'Red'; //for now just set this...
+  TeamOn := 'Blue'; //for now just set this...
   inwaitingroom2 := false;   //leave this to true if ur starting in the aiting room or ion the graveyard
  // writeln(ingraveyard);
   //Getgraveyarddoor;
@@ -995,8 +1038,9 @@ begin
  // insmallgrave;
   // writeln(inGraveFlood(93));
   Writeln(SPS_GetMyPos);
-  writeln(inlargegrave);
-   // terminatescript;
+  //Point(719, 5296), Point(758, 5328))
+  //writeln(inlargegrave);
+  // terminatescript;
   repeat
     if (InGame) then
     begin
