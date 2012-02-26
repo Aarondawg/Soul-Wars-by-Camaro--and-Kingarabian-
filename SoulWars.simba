@@ -27,7 +27,7 @@ const
   MS_BARRIER_RED  = 5659569 ; // Barrier color of red team. MS
   MS_BARRIER_BLUE = 11234661; // Barrier color of blue team. MS
   WARNING_TEXT    = 2302945 ; // Chat box warning text when you go to join a game
-  ARROW_MM_WHITE  = 15790834; // White arrow in game MM
+  ARROW_MM_WHITE  = 16580607; // White arrow in game MM
   ARROW_MM_BLUE   = 16745299; // blue arrow in game MM
   ARROW_MM_RED    = 7901    ; // reed arrow in game MM
   BLUE_NPC_MM     = 14519141; // Blue dots on MM
@@ -662,10 +662,10 @@ var
   BMP : Integer;
   X, Y, I: Integer;
 begin
-  Bmp := BitmapFromString(6, 5, 'meJz78OnTByT05///D1QSAQAxklWX');
-  for I := 0 to 10 do
+  Bmp := BitmapFromString(3, 3, 'meJz78OnTBxwIAGRwGXU=');
+  for I := 0 to 20 do
   begin
-    if (FindBitmapToleranceIn(bmp, X, Y, MMX1, MMY1, MMX2, MMY2, 5)) then
+    if (FindBitmapToleranceIn(bmp, X, Y, MMX1, MMY1, MMX2, MMY2, 12)) then
     begin
       Mouse(x, y, 7, 7, True);
       FFlag(10);
@@ -678,6 +678,62 @@ begin
   FreeBitmap(bmp);
 end;
 
+function ClickWhiteArrowTPA: Boolean;
+var
+  TPA, players: TPointArray;
+  ATPA: T2DPointArray;
+  X, Y, A, I, dist, w, h, col: Integer;
+  tb: Tbox;
+  utBool: Boolean;
+
+begin
+  FindColorsTolerance(TPA, ARROW_MM_WHITE, MMX1, MMY1, MMX2, MMY2, 20);
+  writeln(''+tostr(length(TPA))+'');
+  ATPA := TPAToATPAEx(TPA, 10, 10);
+  SortATPAFrom(ATPA, Point(MMCX, MMCY));
+  players := GetMinimapDots('white');
+  writeln(''+tostr(length(ATPA))+'');
+  debugatpabounds(ATPA);
+  for A := High(ATPA) downto 0 do
+  begin
+    MiddleTPAEx(ATPA[a], x, y);
+    if (rs_OnMinimap(X, Y)) then
+    begin
+    Dist := Distance(MMCX, MMCY, X, Y);
+    if (Dist < 50) then Continue;
+    TB := GetTPABounds(ATPA[a]);
+    W := TB.X2 - TB.X1;
+    H := TB.Y2 - TB.Y1;
+    writeln('White Arrow: D[ '+ToStr(Dist)+' ] W[ '+ToStr(w)+' ] H[ '+ToStr(h)+' ]');
+    if (W > 3) and (H > 3) then
+    begin
+      for I := 0 to High(players) do
+      begin
+        if (Distance(x, y, players[i].x, players[i].y) < 4) then
+        begin
+          writeln('Arrow is a player');
+          UTBool := True;
+          Break;
+        end;
+      end;
+      if (UTBool) then
+      begin
+        UTBool := False;
+        Continue;
+      end;
+      Col := GetColor(X, Y);
+      if (SimilarColors(Col, ARROW_MM_RED, 10)) then
+        Continue;
+      if (SimilarColors(Col, ARROW_MM_BLUE, 10)) then
+        Continue;
+
+      Mouse(X, Y, 7, 7, True);
+      FFlag(0);
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
 
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 var
@@ -718,7 +774,7 @@ begin
       if (DetermineTeamToJoin = 'Red') then
         SPS_WalkToPos(Point(960, 4995))
       else
-        SPS_WalkToPos(Point(415, 5075));
+        SPS_WalkToPos(Point(385, 5055));
       FFlag(0);
       repeat
         if (DetermineTeamToJoin = 'Red') then
@@ -745,8 +801,10 @@ begin
     until (not(InLargeGrave)) or (not(InGame)) or (not(LoggedIn))
   end else
   begin
-    if (AttackPlayer) then
-      Wait(1250 + Random(2000));
+    if (not(ClickWhiteArrowTPA)) then
+      //if (not(ClickWhiteArrow)) then
+        if (AttackPlayer) then
+          Wait(1250 + Random(2000));
   end;
 
 end;
@@ -946,7 +1004,8 @@ begin
   Writeln(SPS_GetMyPos);
   //Point(719, 5296), Point(758, 5328))
   //writeln(inlargegrave);
-  // terminatescript;
+  clickwhitearrowtpa;
+   terminatescript;
   repeat
     if (InGame) then
     begin
