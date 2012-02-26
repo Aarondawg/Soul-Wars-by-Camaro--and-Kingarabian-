@@ -36,20 +36,13 @@ const
   WAITING_TEXT    = 39423   ; // Orange text to detect if we are in the waiting room
   LARGE_GRAVE_WALL= 15854326; // Wall MM of large grave.
   SMALL_GRAVE_WALL= 15527151; // Wall MM of small grave.
-  BLUE_CAPE        = 3416080 ; // blue teams cape
+  BLUE_CAPE       = 3416080 ; // blue teams cape
   RED_CAPE        = 1249591 ; // Red Teams cape
-
-const
-  MiniMapWidth = 154;
-  MiniMapCenterX = 77;
-  MiniMapCenterY = 77;
-
-
 
 var
   TeamOn : String;
-  RecentDead, InWaitingRoom2, WalkFurther: Boolean;
-  bitmap: integer;
+  InWaitingRoom2: Boolean;
+
 
 
 procedure DeclarePlayers;
@@ -68,18 +61,6 @@ begin
   if (DebugScript) then
     Writeln(s);
 end;
-
-Function CheckGameInSession: Boolean; //Text in  box telling you that a game is in session and if you want to continue regardless.
-  begin
-   {If FindText() then
-   ChooseOption;}
-  end;
-
-Function CheckIsKicked: Boolean;  //To-be continued   Basically a chat box will appear telling you that you are banned from the game. Indicates time remaining.
-begin
- {if FindText()}
-end;
-
 
 function InWaitingRoom: Boolean;
 var
@@ -346,93 +327,6 @@ begin
   end;
 end;
 
-
-function InGraveFlood(aTime : integer): Boolean;
-var TPA, tpa2, tpa4: TPointArray;
-atpa : t2dpointarray;
-i,c,x,y: Integer;
-tb : tbox;
-times : integer;
-begin
-
-
-  FindColorsTolerance(TPA, 16708074  , MMX1, MMY1, MMX2, MMY2, 2); //wall
-  FindColorsTolerance(TPA2, 67059 , MMX1, MMY1, MMX2, MMY2, 12); //red door
-  if (aTime > 70) then
-    FindColorsTolerance(TPA4, 13005662 , MMX1, MMY1, MMX2, MMY2, 12); //blue npc
-
-
-  tpa := combineTPA(Tpa,tpa2);
-  tpa := combineTPA(tpa4, tpa);
-  for i := High(TPA) downto 0 do // make all pts relative to origin at 1 left and up from (MMX1, MMY1)
-   tpa[i] := Point(tpa[i].x+1-MMX1, tpa[i].y+1-MMY1);
-
-
-
-
-  FilterPointsDist(TPA,0,MiniMapWidth/2,MiniMapCenterX,MiniMapCenterY);
-
-  writeln('length '+tostr(length(Tpa))+'');
-  atpa := splittpa(tpa, 3);
-  bitmap := CreateBitmap(MiniMapWidth+2,MiniMapWidth+2);
-  for c := 0 to high(atpa) do
-  begin
-    TB := GetTPABounds(ATPA[c]);
-    if (PointInBox( Point(MiniMapCenterX, MiniMapCentery), TB)) then
-     break;
-  end;
-  RectangleBitmap(bitmap, tb, clBlue);
-  for c := 0 to high(Tpa) do
-  begin
-    x := tpa[c].x;
-    y := tpa[c].y;
-    if (pointInBox(Point(x,y), tb))then
-      inc(times);
-  end;
-  writeln(times);
-  DrawTPABitmap(bitmap,tpa,clWhite);
-
-  if (Times > aTime) then
-    Result := True;
-  DisplayDebugImgWindow(MiniMapWidth+2,MiniMapWidth+2);
-  DrawBitmapDebugImg(bitmap);
-
-  freebitmap(bitmap);
-
-end;
-
-
-
-function AnyNPCOnScreen: Boolean;
-var
-  TPA: TPointArray;
-  ATPA: T2DPointArray;
-
-begin
- //if not (LoggedIn) then Exit;
- FindColorsTolerance(TPA, NPC_MM , MMX1, MMY1, MMX2, MMY2, 20);
- ATPA := TPAToATPA(TPA, 7);
- if (Length(ATPA) > 1) then
-   Result := True;
-end;
-
-function WhiteDotsOnScreen: T2DPointArray;//Returns an ATPA of multiple white dots
-var
-  TPA,tpa2: TPointArray;
-  ATPA: T2DPointArray;
-
-  x,y, i:integer;
-begin
- if not (LoggedIn) then Exit;
- if not (InGame) then Exit;
- TPA := GetMinimapDots('white');
- atpa := TPAToATPAEx(tpa, 35, 35);
-
- Result := ATPA;
- DebugATPABounds(atpa);
-end;
-
-
 function RotatePointEx(p, o:tPoint; d:Extended):TPoint ;
 begin
   p.x := p.x + (0 - o.x);
@@ -500,9 +394,6 @@ begin
   end;
   Result := True;
 end;
-
-
-
 
 
 procedure STARTREDWAITINGROOM;
@@ -640,12 +531,6 @@ procedure ENDREDWAITINGROOM;
 begin
 end;
 
-
-procedure DoFight;
-begin
-  Wait(1);
-end;
-
 function InMiddleArea: Boolean;
 var
   Box: TBox;
@@ -772,10 +657,31 @@ begin
   end;
 end;
 
+function ClickWhiteArrow: Boolean;
+var
+  BMP : Integer;
+  X, Y, I: Integer;
+begin
+  Bmp := BitmapFromString(6, 5, 'meJz78OnTByT05///D1QSAQAxklWX');
+  for I := 0 to 10 do
+  begin
+    if (FindBitmapToleranceIn(bmp, X, Y, MMX1, MMY1, MMX2, MMY2, 5)) then
+    begin
+      Mouse(x, y, 7, 7, True);
+      FFlag(10);
+      Result := True;
+      FreeBitmap(bmp);
+      Exit;
+    end;
+    Wait(375 + Random(375));
+  end;
+  FreeBitmap(bmp);
+end;
+
+
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 var
-  TP : TPoint;
-  T, HP, B, FS: Integer;
+   FS: Integer;
 begin
   if not (InGame) then Exit;
   Result := True;
