@@ -595,8 +595,8 @@ var
   TP: TPoint;
 begin
   TP := SPS_GetMyPos;
-
-  Box := PointToBox(Point(483, 5075), Point(494, 5088));
+ // Writeln(TP);
+  Box := PointToBox(Point(483, 5075), Point(495, 5088));
   Result := PointInBox(TP, Box);
 
   if (Result) then Exit;
@@ -605,34 +605,41 @@ begin
   Result := PointInBox(TP, Box);
 
 end;
-Function WalkToObelisk : Boolean;
+function WalkToObelisk : Boolean;
 begin
-     If (InMiddleArea) then
-    Writeln('in middle area');
+  If (InMiddleArea) then
+  begin
+    Debug('in middle area');
     Result:= True;
     Exit;
-    If (Not(InGame)) then
-    Writeln('1');
+  end;
+  If (not(InGame)) then
+  begin
+    Debug('1');
     exit;
-    If (Not(LoggedIn)) then
-    Writeln('2');
-    exit;
-    If (InLargeGrave) or (InSmallGrave) then
-    Writeln('3');
+  end;
+  if (not(LoggedIn)) then
+  begin
+    Debug('2');
+    Exit;
+  end;
+  If (InLargeGrave) or (InSmallGrave) then
+  begin
+    Debug('3');
     Exit; //put this toward the beginning of the loop, so it wont try walking and then realize we are in the graveyard
-    If (DetermineTeamToJoin = 'Red') then
-    begin
-      Writeln('4')
-     // Mouse(664, 90, 1, 3, True);
-      Sps_WalkPath(RedPathToObelisk);
-      FFlag(0);
-    end else
-    begin// You need this begin/end
-      Writeln('5')
-      Sps_WalkPAth(BluePathToObelisk);
-      FFlag(0);
-    end;
-    Wait(50 + Random(50)); //IDK
+  end;
+  If (DetermineTeamToJoin = 'Red') then
+  begin
+    Debug('4')
+    //Mouse(664, 90, 1, 3, True);
+    Sps_WalkPath(RedPathToObelisk);
+    FFlag(0);
+  end else
+  begin// You need this begin/end
+    Debug('5')
+    Sps_WalkPAth(BluePathToObelisk);
+    FFlag(0);
+  end;
 end;
 
 
@@ -810,17 +817,17 @@ begin
       begin
         if (FindRedBarrier) then
         begin
-      //  Mouse(665, 129, 15, 15, True);
-         WalkToObelisk;
-         Exit;
+         // Mouse(665, 129, 15, 15, True);
+          WalkToObelisk;
+          Exit;
         end;
       end else
       begin
         if (FindBlueBarrier) then
         begin
-        //Mouse(665, 129, 15, 15, True);
-          WalkToObelisk;
-          Exit;
+          // Mouse(665, 129, 15, 15, True);
+           WalkToObelisk;
+           Exit;
         end;
       end;
       Wait(500 + Random(1500));
