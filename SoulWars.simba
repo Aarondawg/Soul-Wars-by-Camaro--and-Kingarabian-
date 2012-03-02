@@ -43,7 +43,8 @@ const
 var
   TeamOn : String;
   InWaitingRoom2: Boolean;
-  GamesPlayed: Integer;
+  GamesPlayed, Lost, Tied, Won, Kicked, Zeals: Integer;
+  Checked : Boolean;
 
 
 
@@ -52,7 +53,7 @@ begin
   HowManyPlayers := 1; // Number of Players to use
   NumberOfPlayers(HowManyPlayers);
   CurrentPlayer := 0; // Player to start with, first one is 0
-  Players[0].Name := 'hi'; // Username
+  Players[0].Name := ''; // Username
   Players[0].Pass := ''; // Password
   Players[0].Active := True; // True if you are using this player
   Players[0].Pin := ''; // Bank Pin. Leave it if you don't have one.
@@ -628,7 +629,7 @@ end;
 
 Function RedSmallGraveToObelisk : TPointArray;
 begin
-  Result := [Point(840, 5035),Point(800, 5035),Point(750, 5030), Point(690, 5035)]
+  Result := [Point(855, 4980),Point(840, 5035),Point(775, 5030), Point(720, 5030),Point(665, 5020)]
 end;
 
 Function BlueSmallGraveToObelisk : TPointArray;// NEW
@@ -785,6 +786,7 @@ begin
   SortATPAFrom(ATPA, Point(MSCX, MSCY));
   for I := 0 to High(ATPA) do
   begin
+  if (InSmallGrave) or (inLargeGrave) then Exit;
     MiddleTPAEx(ATPA[i], x, y);
     if (PointInBox(Point(x, y), IntToBox(233, 137, 284, 193))) then //if the point is our character
       Continue;
@@ -806,6 +808,8 @@ begin
   end;
 
 end;
+
+
 
 function FindRedBarrier: Boolean;
 begin
@@ -933,7 +937,7 @@ begin
       begin
         if (FindRedBarrier) then
         begin
-          //Mouse(665, 129, 15, 15, True);
+          Mouse(628, 98, 15, 15, True);
           MakeCompass('n');
           SetAngle(SRL_ANGLE_HIGH);
           WalkToObelisk(True);
@@ -1168,6 +1172,11 @@ function GetLoc: String;
 begin
   if (not(InGame)) then //If not in the game
   begin
+    if (FindNPCChatTextMulti(['articipation' ,'ictorious', 'eam'], Nothing)) then
+    begin
+      Result := 'Tally';
+      Exit;
+    end;
     if (NearBank) then // If we are near the bank
     begin
       Result := 'LeaveBank';//Tell main loop to walk toward the middle of the two islands
@@ -1188,11 +1197,49 @@ begin
   end;
 
 end;
-
-procedure DetermineWins;
-
-
+Function StayLoggedIn : Boolean;
 begin
+// Repeat
+ While (InWaitingRoom)  do
+    Case Random(3) of
+    0: BoredHuman;
+    1: RandomRclick;
+    2: RandomMovement;
+    end;
+  //Until (Not(InWaitingRoom));
+  Result:= True;
+end;
+procedure DetermineWins;
+begin
+  Inc(GamesPlayed);
+  Checked := True;
+  if FindNPCChatTextMulti(['1'], Nothing) then        //, 'articipation' ,'ictorious', 'eam']
+  begin
+    writeln('We lost :(');
+    Inc(Lost);
+    IncEx(Zeals, 1);
+    Exit;
+  end;
+  if FindNPCChatTextMulti(['2'], Nothing) then        //, 'articipation' ,'ictorious', 'eam']
+  begin
+    writeln('We tied :|');
+    Inc(Tied);
+    IncEx(Zeals, 2);
+    Exit;
+  end;
+  if FindNPCChatTextMulti(['3'], Nothing) then        //, 'articipation' ,'ictorious', 'eam']
+  begin
+    writeln('We won :)');
+    Inc(Won);
+    IncEx(Zeals, 3);
+    Exit;
+  end;
+  if FindNPCChatTextMulti(['0'], Nothing) then        //, 'articipation' ,'ictorious', 'eam']
+  begin
+    writeln('We got kicked :''(');
+    Inc(Kicked);
+    Exit;
+  end;
 
 end;
 
@@ -1204,6 +1251,10 @@ begin
   Writeln('[ Camaro'' and kingarabian''s soul wars - Version: '+ToStr(Version)+' ]');
   Writeln('[ Time Running: '+TimeRunning+' ]');
   Writeln('[ Games Played: '+ToStr(GamesPlayed)+' ]');
+  Writeln('[ Games Won: '+ToStr(Won)+' ]');
+  Writeln('[ Games Tied: '+ToStr(Tied)+' ]');
+  Writeln('[ Games Lost: '+ToStr(Lost)+' ]');
+  Writeln('[ Zeal Earned: '+ToStr(Zeals)+' ]');
 end;
 
 
@@ -1219,7 +1270,7 @@ begin
  //  (535, 5030) (595, 5020)    (645, 5025)   (690, 5025)
   DeclarePlayers;
   ActivateClient;
-  TeamOn := 'Blue'; //for now just set this...
+  TeamOn := 'Red'; //for now just set this...
 
   Writeln(SPS_GetMyPos);
 
@@ -1232,6 +1283,18 @@ begin
     if (InWaitingRoom) then
       Disguise('InWaitingRoom');
     case GetLoc of
+          'Tally':
+      begin
+        if (not(Checked)) then
+        begin
+          DetermineWins;
+          ProgressReport;
+        end else
+        begin
+          Mouse(260, 470, 14, 4, True);
+          Wait(1250 + Random(2000));
+        end;
+      end;
       'LeaveBank':
       begin
         if (not(SPS_WalkToPos(Point(685, 5300)))) then
@@ -1269,6 +1332,7 @@ begin
       begin
         InWaitingRoom2 := True;
         Wait(1250 + Random(1250));
+        StayLoggedIn;
         if (Random(30) = 5) then
           MMouse(Random(500), Random(500), 0, 0);
       end;
