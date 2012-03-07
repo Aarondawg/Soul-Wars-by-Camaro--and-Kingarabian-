@@ -15,7 +15,7 @@ const
   DebugScript = True;
   //Removed ur other const, cause its the same thing as this one
   Team = 'Random'; // Random, Last Won, Last Lost , Always Red, Always Blue,
-
+  InGameRole = 'Bandage';//Either Bandage or Fight
 
 //USERS - DONT TOUCH THESE
 const
@@ -250,6 +250,42 @@ begin
   MakeCompass('N');
   SetAngle(SRL_ANGLE_HIGH);
 end;
+
+Function InBandages : Boolean;
+Var
+ Box :TBox;
+ TP  :TPoint;
+begin
+ TP := SPS_GetMyPos;
+ Box := PointToBox(Point(335, 4920), Point(370, 4940));
+ Result := (PointInBox(TP, Box));
+end;
+
+Function GetBandages : Boolean;
+Var
+ X, Y,  Bandages : Integer;
+ a : Extended;
+begin
+  Bandages := DTMFromString('mbQAAAHicY2VgYNBhZGDQAmI9INaG0peA4meh+AYQXwNivZ3SDEeP7mX4/PkFw4kTBxjOnTvKwA8UR8eMWDAYAADv0RAa');
+  Writeln('Finding DTM')
+  If FindDTMRotated(Bandages, X, Y, MSX1, MSY1, MSX2, MSY2, -Pi, Pi, Pi/30, a) then
+  begin
+   Mouse(X, Y, 2, 3, False);
+   If (waitOption('-x', 500)) then
+   begin
+    //Mouse(X, Y, 4, 4, True);
+    // If FindText(X, Y, 'many bandages', 'SmallChars', 7, 345, 508, 467) then
+    Fflag(0);
+    Wait(1500+Random(500));
+    TypeSendEx('28', True);
+    Result:= True;
+   end;
+  end;
+  FreeDTM(Bandages)
+end;
+
+
+
 
 function CompassNorth : Boolean;//gets the compass and checks if ur facing north
 var
@@ -653,7 +689,35 @@ begin
 
 end;
 
+Function RedToBandages : TPointArray;
+begin
+  Result := [Point(990, 5025), Point(985, 5075), Point(985, 5120)]
+end;
 
+Function RedBandagesToObelisk : TPointArray;
+begin
+  Result := [Point(940, 5100),Point(890, 5070),Point(830, 5065),Point(775, 5035),Point(720, 5030),Point(675, 5030)]
+end;
+
+Function BlueToBandages : TPointArray;
+begin
+  Result := [Point(340, 5045),Point(355, 4990),Point(340, 4960),Point(355, 4930)]
+end;
+
+Function BlueBandagesToObelisk : TPointArray;
+begin
+  Result  :=   [Point(410, 4960),Point(455, 5005),Point(505, 5020),Point(565, 5020),Point(615, 5020),Point(645, 5025)]
+end;
+
+Function BSmallGraveToBandages : TPointArray;
+begin
+  Result :=[Point(480, 5025), Point(445, 4990), Point(405, 4965),Point(355, 4930)]
+end;
+
+Function RSmallGraveToBandages : TPointArray;
+begin
+  Result :=[Point(965, 4995), Point(855, 5040),Point(895, 5085),Point(940, 5100), Point(985, 5115)]
+end;
 // Walks the path "Path"; always walks to the furthest point possible With a fix for soul wars
 function SPS_WalkPath_SW(Path: TPointArray): boolean;
 var
@@ -734,7 +798,83 @@ begin
   end;
 end;
 
+Function SetupBandagesRed : Boolean;
+begin
+     SPS_WalkPath_SW(RedToBandages);
+    FFlag(0);
+    GetBandages;
+    Wait(1000+Random(500))
+    SPS_WalkPath_SW(RedBandagesToObelisk)
+end;
 
+Function SetupBandagesRed2 : Boolean;
+begin
+    SPS_WalkPath_SW(RSmallGraveToBandages)
+    FFlag(0);
+    GetBandages;
+    Wait(1000+Random(500));
+    SPS_WalkPath_SW(RedBandagesToObelisk);
+    FFlag(0);
+end;
+
+Function SetupBandagesBlue : Boolean;
+begin
+      SPS_WalkPath_SW(BlueToBandages);
+      FFlag(0);
+      GetBandages;
+      Wait(1000+Random(500));
+      SPS_WalkPath_SW(BlueBandagesToObelisk);
+end;
+
+Function SetupBandagesBlue2 : Boolean;
+begin
+     SPS_WalkPath_SW(BSmallGraveToBandages);
+      FFlag(0);
+      GetBandages;
+      Wait(1000+Random(500));
+      SPS_WalkPath_SW(BlueBandagesToObelisk);
+end;
+
+function WalkToObelisk2(Small : Boolean) : Boolean;
+begin
+  If (InMiddleArea) then
+  begin
+    Debug('in middle area');
+    Result:= True;
+    Exit;
+  end;
+  If (not(InGame)) then
+  begin
+    Debug('1');
+    exit;
+  end;
+  if (not(LoggedIn)) then
+  begin
+    Debug('2');
+    Exit;
+  end;
+  If (InLargeGrave) or (InSmallGrave) then
+  begin
+    Debug('3');
+   // Exit; //put this toward the beginning of the loop, so it wont try walking and then realize we are in the graveyard
+  end;
+  If (DetermineTeamToJoin = 'Red') then
+  begin
+    Debug('4')
+    if (not(Small)) then
+    SetupBandagesRed
+    else
+    SetupBandagesRed2;
+  end else
+  begin
+    Debug('5')
+    if (not(Small)) then
+     SetupBandagesBlue
+    else
+      SetupBandagesBlue2;
+    FFlag(0);
+  end;
+end;
 
 function FindBlueBarrier: Boolean;
 begin
@@ -809,7 +949,48 @@ begin
 
 end;
 
+   function BandagePlayers: Boolean;
+var
+  TPA: TPointArray;
+  ATPA: T2DPointArray;
+  X, Y, I, Bandage: Integer;
+begin
+   Bandage :=DTMFromString('mlwAAAHicY2dgYPBiYmAIAGJnIHYH4mAg9gRiHyD+D5T/CcR/gZiNkYGBiRHCZwXSEol8DNOnT2Cora1giI4OZ6ipKWNIz8lhqKoqYeAHqsGFGfFgKAAAnI0PaQ==');
+   If FindDTM(Bandage, X, Y, MIX1, MIY1, MIX2, MIY2) then
+   begin
+    Mouse(X, Y, 2, 4, false);
+    WaitOption('Use', 800);
+    Wait(250+random(150));
+   If IsUpText('andage') then
+   Writeln('Using Bandages...');
+  if (DetermineTeamToJoin = 'Red') then
+    FindColorsTolerance(TPA, RED_CAPE, 9, 66, 494, 323, 8)
+  else
+    FindColorsTolerance(TPA, BLUE_CAPE, 9, 66, 494, 323, 8);
 
+  ATPA := TPAToATPAEx(TPA, 7, 7);
+  SortATPAFrom(ATPA, Point(MSCX, MSCY));
+  for I := 0 to High(ATPA) do
+  begin
+  if (InSmallGrave) or (inLargeGrave) then Exit;
+    MiddleTPAEx(ATPA[i], x, y);
+    if (PointInBox(Point(x, y), IntToBox(233, 137, 284, 193))) then //if the point is our character
+      Continue;
+    if (PointInBox(Point(x, y), IntToBox(240, 24, 390, 85))) then //grave yard control
+      Continue;
+    if (PointInBox(Point(x, y), IntToBox(391, 22, 502, 175))) then//Activity bar and shit near that
+      Continue;
+      Mouse(X, Y, 7, 7, False);
+    if WaitOption('Use', 250) then
+    begin
+      FFlag(0);
+      Result := True;
+      Exit;
+    end;
+    end;
+    Wait(500);
+   end;
+ end;
 
 function FindRedBarrier: Boolean;
 begin
@@ -923,6 +1104,10 @@ begin
   end;
 end;
 end;
+
+//Function Setup : Boolean;
+
+
 function GameLoop: Boolean; //Gets repeated as long as we are in the game
 var
    FS: Integer;
@@ -940,9 +1125,14 @@ begin
           Mouse(628, 98, 15, 15, True);
           MakeCompass('n');
           SetAngle(SRL_ANGLE_HIGH);
-          WalkToObelisk(True);
+         If (IngameRole = 'Bandage') then
+          WalkToObelisk2(True);
           Exit;
-        end;
+          End else
+          begin
+            WalkToObelisk(True);
+            Exit;
+          end;
       end else
       begin
         if (FindBlueBarrier) then
@@ -950,6 +1140,11 @@ begin
            MakeCompass('n');
            SetAngle(SRL_ANGLE_HIGH);
            Mouse(663, 47, 15, 15, True);
+          If (IngameRole = 'Bandage') then
+          WalkToObelisk2(True);
+          Exit;
+          End else
+          begin
            WalkToObelisk(True);
            Exit;
         end;
@@ -980,6 +1175,11 @@ begin
               Inc(GamesPlayed);
               InWaitingRoom2 := false;
             end;
+          If (IngameRole = 'Bandage') then
+          WalkToObelisk2(false);
+          Exit;
+          End else
+          begin
             WalkToObelisk(False);
             Exit;
           end;
@@ -993,6 +1193,11 @@ begin
               Inc(GamesPlayed);
               InWaitingRoom2 := false;
             end;
+          If (IngameRole = 'Bandage') then
+          WalkToObelisk2(false);
+          Exit;
+          End else
+          begin
             WalkToOBelisk(false);
             Exit;
           end;
@@ -1005,13 +1210,17 @@ begin
   end else
   begin
     If (InMiddleArea) then
-      AttackPlayer
-    else
-      WalkToObelisk(False);
+     If (IngameRole = 'Bandage') then
+      BandagePlayers
+      else
+      AttackPlayer;
+     { end else
+      begin
+      WalkToObelisk(False);}
 
   Wait(1250 + Random(2000));
   end;
-
+ //end;
 end;
 
 
@@ -1270,13 +1479,18 @@ begin
  //  (535, 5030) (595, 5020)    (645, 5025)   (690, 5025)
   DeclarePlayers;
   ActivateClient;
-  TeamOn := 'Red'; //for now just set this...
+  TeamOn := 'Blue'; //for now just set this...
 
   Writeln(SPS_GetMyPos);
-
+  SPS_WalkPath_SW(RedToBandages);
+ // BandagePlayers;
+ // GetBandages;
   //leavebarrierDTM('Red', 'e');
-
-  // terminatescript;
+  {If Inbandages then
+  begin
+  writeln('hi');
+  end;}
+  //terminatescript;
   repeat
     if (InGame) then
       Disguise('InGame');
